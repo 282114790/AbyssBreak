@@ -833,36 +833,73 @@ func _update_skill_bar() -> void:
 	if not is_instance_valid(bar): return
 
 	var skill_count = player.skills.size()
-	if skill_count == _skill_bar_cache: return  # 没变化不重建
+	if skill_count == _skill_bar_cache: return
 	_skill_bar_cache = skill_count
 
 	for c in bar.get_children(): c.queue_free()
 
-	var slot_tex = load("res://assets/ui/ui_skill_slot.png")
+	# 技能id → 图标列索引（对应 skill_icons.png 480x32，15列）
+	var icon_map := {
+		"fireball":      0,
+		"orbital":       1,
+		"lightning":     2,
+		"iceblade":      3,
+		"ice_blade":     3,
+		"frostzone":     4,
+		"runeblast":     5,
+		"poison_cloud":  6,
+		"void_rift":     7,
+		"blood_nova":    8,
+		"time_slow":     9,
+		"thorn_aura":    10,
+		"meteor_shower": 11,
+		"chain_lance":   12,
+		"holywave":      13,
+		"arcane_orb":    14,
+	}
+	var icons_tex = load("res://assets/ui/skill_icons.png") if ResourceLoader.exists("res://assets/ui/skill_icons.png") else null
+	var slot_tex = load("res://assets/ui/ui_skill_slot.png") if ResourceLoader.exists("res://assets/ui/ui_skill_slot.png") else null
+
 	for i in range(max(skill_count, 1)):
 		var slot = TextureRect.new()
-		slot.texture = slot_tex
+		if slot_tex: slot.texture = slot_tex
 		slot.custom_minimum_size = Vector2(72, 72)
 		slot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
 		if i < skill_count:
 			var skill = player.skills[i]
-			var name_lbl = Label.new()
-			name_lbl.text = skill.data.display_name if skill.data else "?"
-			name_lbl.add_theme_font_size_override("font_size", 10)
-			name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			name_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-			name_lbl.offset_bottom = 0
-			name_lbl.offset_top = -18
-			slot.add_child(name_lbl)
+			var sid = skill.data.id if skill.data else ""
+
+			# 图标
+			if icons_tex and icon_map.has(sid):
+				var col = icon_map[sid]
+				var icon_rect = TextureRect.new()
+				var atlas = AtlasTexture.new()
+				atlas.atlas = icons_tex
+				atlas.region = Rect2(col * 32, 0, 32, 32)
+				icon_rect.texture = atlas
+				icon_rect.custom_minimum_size = Vector2(32, 32)
+				icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				icon_rect.set_anchors_preset(Control.PRESET_CENTER)
+				icon_rect.offset_left = -16; icon_rect.offset_right = 16
+				icon_rect.offset_top = -22; icon_rect.offset_bottom = 10
+				slot.add_child(icon_rect)
 
 			var lv_lbl = Label.new()
-			lv_lbl.text = "Lv%d" % skill.level
+			lv_lbl.text = "Lv%d" % (skill.data.level if skill.data else 1)
 			lv_lbl.add_theme_font_size_override("font_size", 9)
 			lv_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.3))
 			lv_lbl.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 			lv_lbl.offset_left = -24; lv_lbl.offset_top = 2
 			slot.add_child(lv_lbl)
+
+			var name_lbl = Label.new()
+			name_lbl.text = skill.data.display_name.substr(2) if skill.data else "?"  # 去掉emoji前缀
+			name_lbl.add_theme_font_size_override("font_size", 9)
+			name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			name_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+			name_lbl.offset_bottom = 0; name_lbl.offset_top = -16
+			slot.add_child(name_lbl)
 
 		bar.add_child(slot)
 

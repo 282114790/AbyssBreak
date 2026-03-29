@@ -1,5 +1,5 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1774797638
+::res://::1774799497
 PROJECT_STRUCTURE.md::TextFile::-1::1774172746::0::1::::<><><>0<>0<><>::
 TODO.csv::Translation::7400261657841705007::1774796239::1774797352::1::::<><><>0<>0<>7559f53d019427241ac0d3315aa46b49<>res://TODO.分类.translation<*>res://TODO.任务.translation<*>res://TODO.状态.translation<*>res://TODO.备注.translation::
 TODO.任务.translation::OptimizedTranslation::4386987403275669234::1774797352::0::1::::<><><>0<>0<><>::
@@ -23,7 +23,7 @@ hit.wav::AudioStreamWAV::8281711043071759465::1774181700::1774181979::1::::<><><
 level_up.wav::AudioStreamWAV::1679123494991842640::1774181700::1774181979::1::::<><><>0<>0<>5e2493c3e80f2d53eb7fdd52dfb293ce<>res://.godot/imported/level_up.wav-75610a7eea48a72884ca6c7dd7c31e7c.sample::
 player_hurt.wav::AudioStreamWAV::8322152372376293916::1774181700::1774181979::1::::<><><>0<>0<>0a0c3166f9881c888e5197d9c4b817a5<>res://.godot/imported/player_hurt.wav-ac6b5cd0f4829d5437208168ae96416b.sample::
 shoot.wav::AudioStreamWAV::3702168218329444032::1774181700::1774181979::1::::<><><>0<>0<>654bd728d37548666626886299d9e7ad<>res://.godot/imported/shoot.wav-e9bec753846e12fa31bfb2e7cf2b2288.sample::
-::res://assets/sprites/::1774797615
+::res://assets/sprites/::1774797639
 demon_attack.png::CompressedTexture2D::3229297619863687282::1774252669::1774257488::1::::<><><>0<>0<>fbea6b541857c16546cd3f23cfcfe1ca<>res://.godot/imported/demon_attack.png-4163013551ee1d0cdc2dda0a2550e867.ctex::
 demon_death.png::CompressedTexture2D::7965970274348510341::1774252669::1774257488::1::::<><><>0<>0<>27b8bf66e2247bd2487f1c2396fff01a<>res://.godot/imported/demon_death.png-60afcdf134ea6696e475c0759bc2e0af.ctex::
 demon_walk.png::CompressedTexture2D::8483736166247921253::1774252669::1774257488::1::::<><><>0<>0<>2251eee23f3d8300c9d666338d689e8a<>res://.godot/imported/demon_walk.png-0f653070c91b32893c86c2f0ef8bedeb.ctex::
@@ -83,8 +83,9 @@ floor_tile.png::CompressedTexture2D::4878812953342842084::1774286483::1774286531
 floor_tiles_strip.png::CompressedTexture2D::3174130929098928613::1774286483::1774286531::1::::<><><>0<>0<>6901d464444f8bd639717f6b38115fa3<>res://.godot/imported/floor_tiles_strip.png-d8e8b9226cc919cae9f1949a6c0c1a51.ctex::
 kenney_dungeon.png::CompressedTexture2D::7228842575121516913::1657033268::1774286087::1::::<><><>0<>0<>411e72bedc34fa31da97c960ad519bfe<>res://.godot/imported/kenney_dungeon.png-1041c4aaaea37ad763be8aff4de92b6c.ctex::
 torch_anim.png::CompressedTexture2D::8603060383002310701::1774778419::1774778832::1::::<><><>0<>0<>4433ac94ca8cdd3f49638127a36da77b<>res://.godot/imported/torch_anim.png-95490898a1e74743e0bfee5700292095.ctex::
-::res://assets/ui/::1774790682
+::res://assets/ui/::1774799427
 icon_soul_stone.png::CompressedTexture2D::6119642600017074670::1774789480::1774790682::1::::<><><>0<>0<>0fcdfc475943f21f8ec5a4f97cd73479<>res://.godot/imported/icon_soul_stone.png-3abb637e91243dd848f2e8a3e494635a.ctex::
+skill_icons.png::CompressedTexture2D::6788886382725263474::1774799427::1774799498::1::::<><><>0<>0<>ada1b72ec58432268a4a529e5489cd96<>res://.godot/imported/skill_icons.png-bb103ffea62e4446391861ca865941f9.ctex::
 ui_skill_slot.png::CompressedTexture2D::4036431434806155735::1774789570::1774790682::1::::<><><>0<>0<>8e3c460a55a3ff246ea6e51f0a190001<>res://.godot/imported/ui_skill_slot.png-d6dd5b1769e1442280b72778778456ae.ctex::
 ::res://assets_download/::1774285913
 ::res://assets_download/kenney_tiny-dungeon/::1774286087
@@ -553,7 +554,7 @@ DifficultyData.gd::GDScript::4268615292605000750::1774795420::0::1::::<>Resource
 EventBus.gd::GDScript::3966940400105939067::1774796084::0::1::::<>Node<><>0<>0<><>::
 ExperienceGem.gd::GDScript::2212364162658227354::1774795703::0::1::::ExperienceGem<>Area2D<><>0<>0<><>::
 GameManager.gd::GDScript::223666777030938622::1774172719::0::1::::GameManager<>Node<><>0<>0<><>::
-Main.gd::GDScript::757659570647093984::1774795977::0::1::::<>Node2D<><>0<>0<><>::
+Main.gd::GDScript::757659570647093984::1774799480::0::1::::<>Node2D<><>0<>0<><>::
 MetaProgress.gd::GDScript::8172371653970587498::1774791587::0::1::::<>Node<><>0<>0<><>::
 PassiveData.gd::GDScript::6921030082026674419::1774791386::0::1::::PassiveData<>Resource<><>0<>0<><>::
 ScreenShake.gd::GDScript::6197542601900394391::1774179271::0::1::::<>Node<><>0<>0<><>::
