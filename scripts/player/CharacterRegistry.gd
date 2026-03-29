@@ -57,6 +57,10 @@ func _register_all() -> void:
 	hunter.regen_base    = 0.0
 	hunter.start_skill_ids = ["lightning"]
 	hunter.trait_desc    = "移动速度×1.35，拾取范围×1.3，HP×0.75"
+	hunter.walk_sheet_path  = "res://assets/sprites/hunter_walk_sheet.png"
+	hunter.walk_frame_count = 8
+	hunter.walk_frame_w     = 128
+	hunter.walk_frame_h     = 128
 	all_characters.append(hunter)
 
 func get_character(id: String):
