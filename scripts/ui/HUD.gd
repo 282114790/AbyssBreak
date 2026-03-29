@@ -51,7 +51,8 @@ func _update_difficulty_badge() -> void:
 	var diff = game_manager.get("current_difficulty")
 	if diff == null:
 		return
-	var diff_id = diff.get("id", "normal") if diff.get_script() == null else diff.id
+	# DifficultyData 是 Resource，.id 是普通属性
+	var diff_id: String = str(diff.get("id")) if diff.get("id") != null else ""
 	match diff_id:
 		"normal":
 			difficulty_badge.text = "🟢 普通"
@@ -63,8 +64,9 @@ func _update_difficulty_badge() -> void:
 			difficulty_badge.text = "🔴 深渊"
 			difficulty_badge.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
 		_:
-			difficulty_badge.text = diff_id
-			difficulty_badge.add_theme_color_override("font_color", Color.WHITE)
+			if diff_id != "" and diff_id != "null":
+				difficulty_badge.text = "⚙ " + diff_id
+				difficulty_badge.add_theme_color_override("font_color", Color.WHITE)
 
 func _on_hp_changed(current: float, maximum: float) -> void:
 	if hp_bar:
