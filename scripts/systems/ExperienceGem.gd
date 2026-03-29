@@ -68,6 +68,7 @@ func _collect() -> void:
 	var snd = get_tree().get_first_node_in_group("sound_manager")
 	if snd:
 		snd.play_gem_pickup()
+	EventBus.gem_collected.emit(exp_value)
 	queue_free()
 
 func _on_collected(body: Node2D) -> void:

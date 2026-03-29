@@ -7,6 +7,7 @@ func activate() -> void:
 	if not owner_player: return
 	var sm = get_tree().get_first_node_in_group("sound_manager")
 	if sm: sm.play_explosion()
+	EventBus.skill_activated.emit("meteor_shower")
 	_start_shower()
 
 func _start_shower() -> void:

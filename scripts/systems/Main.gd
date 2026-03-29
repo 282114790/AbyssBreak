@@ -2,6 +2,8 @@
 # 游戏主入口 - 程序化创建所有节点，无需美术资源直接运行
 extends Node2D
 
+const DifficultyDataScript = preload("res://scripts/systems/DifficultyData.gd")
+
 # ── 子系统引用 ──
 var player: CharacterBody2D
 var wave_manager: Node
@@ -14,6 +16,7 @@ var result_screen: CanvasLayer
 var unlock_screen: CanvasLayer
 var char_registry: Node
 var char_select_screen: CanvasLayer
+var achievement_system: Node
 
 # ── 经验宝石池 ──
 var gem_pool: Array = []
@@ -22,6 +25,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_meta_progress()
 	_setup_char_registry()
+	_setup_achievement_system()
 	_connect_event_bus()
 	_setup_camera()
 	_setup_background()
@@ -29,6 +33,16 @@ func _ready() -> void:
 	_setup_sound_manager()
 	# 先弹角色选择，选完再初始化玩家/波次/HUD
 	_show_char_select()
+
+# ────────────────────────────────────────
+# 成就系统
+# ────────────────────────────────────────
+func _setup_achievement_system() -> void:
+	achievement_system = Node.new()
+	achievement_system.set_script(load("res://scripts/systems/AchievementSystem.gd"))
+	achievement_system.name = "AchievementSystem"
+	add_child(achievement_system)
+	achievement_system.set_meta_progress(meta_progress)
 
 # ────────────────────────────────────────
 # 事件总线连接
@@ -152,17 +166,82 @@ func _show_char_select() -> void:
 	await get_tree().process_frame
 	char_select_screen.show_screen(char_registry, meta_progress)
 	char_select_screen.character_selected.connect(_on_character_selected)
+	char_select_screen.daily_challenge_requested.connect(_on_daily_challenge_requested)
 
 func _on_character_selected(char_id: String) -> void:
 	char_registry.selected_id = char_id
 	char_select_screen.queue_free()
+	_show_difficulty_select()
+
+var difficulty_screen: CanvasLayer = null
+var current_difficulty = null  # DifficultyData
+var daily_challenge: Node = null       # DailyChallenge 节点
+var daily_modifier_type: int = -1      # -1=无modifier，0/1/2=有modifier
+
+func _show_difficulty_select() -> void:
+	difficulty_screen = CanvasLayer.new()
+	difficulty_screen.set_script(load("res://scripts/ui/DifficultySelect.gd"))
+	difficulty_screen.name = "DifficultySelect"
+	difficulty_screen.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(difficulty_screen)
+	await get_tree().process_frame
+	difficulty_screen.show_screen()
+	difficulty_screen.difficulty_selected.connect(_on_difficulty_selected)
+
+func _on_difficulty_selected(diff) -> void:
+	current_difficulty = diff
+	difficulty_screen.queue_free()
 	_start_game()
+
+func _on_daily_challenge_requested() -> void:
+	# 获取每日挑战配置，直接开始游戏
+	char_select_screen.queue_free()
+
+	var dc_script = load("res://scripts/systems/DailyChallenge.gd")
+	daily_challenge = Node.new()
+	daily_challenge.set_script(dc_script)
+	daily_challenge.name = "DailyChallenge"
+	add_child(daily_challenge)
+
+	var cfg = daily_challenge.get_challenge_config()
+	daily_modifier_type = cfg.get("modifier_type", -1)
+
+	# 设置角色
+	char_registry.selected_id = cfg.get("char_id", "mage")
+
+	# 构建难度（复用 DifficultySelect 的逻辑）
+	var DD = load("res://scripts/systems/DifficultyData.gd")
+	var diff_map := {
+		"normal": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+		"hard":   [1.5, 1.3, 1.1, 1.3, 1.2, 1.5],
+		"abyss":  [2.5, 2.0, 1.2, 1.8, 1.5, 2.0],
+	}
+	var diff_names := {"normal":"普通", "hard":"困难", "abyss":"深渊"}
+	var diff_id = cfg.get("difficulty_id", "normal")
+	var d_params = diff_map.get(diff_id, diff_map["normal"])
+	var d = DD.new()
+	d.id = diff_id
+	d.display_name = diff_names.get(diff_id, "普通")
+	d.enemy_hp_mult = d_params[0]; d.enemy_dmg_mult = d_params[1]
+	d.enemy_speed_mult = d_params[2]; d.enemy_count_mult = d_params[3]
+	d.exp_mult = d_params[4]; d.soul_stone_mult = d_params[5]
+	current_difficulty = d
+
+	_start_game()
+	# 开始后应用modifier（需等玩家完全初始化）
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if daily_modifier_type >= 0 and is_instance_valid(player):
+		daily_challenge.apply_modifier(daily_modifier_type, player, wave_manager)
 
 func _start_game() -> void:
 	_setup_player()
 	_setup_wave_manager()
 	_setup_hud()
 	_register_demo_content()
+	if current_difficulty and wave_manager:
+		wave_manager.set_meta("difficulty", current_difficulty)
+		set_meta("current_difficulty_mult", current_difficulty.soul_stone_mult)
 	wave_manager.start(player)
 
 func _setup_hud() -> void:
@@ -226,7 +305,7 @@ func _setup_hud() -> void:
 
 	# 波次
 	var wave_lbl = Label.new()
-	wave_lbl.position = Vector2(10,52); wave_lbl.size = Vector2(140,20); wave_lbl.text = "第 1 波"
+	wave_lbl.position = Vector2(10,52); wave_lbl.size = Vector2(160,20); wave_lbl.text = "Wave 1 / 5"
 	hud_layer.add_child(wave_lbl)
 	hud_layer.wave_label = wave_lbl
 
@@ -277,6 +356,39 @@ func _setup_hud() -> void:
 
 	# 注入 game_manager 引用（用于计时）
 	hud_layer.game_manager = self
+
+	# ── 难度徽章（右上角）──
+	var diff_badge = Label.new()
+	diff_badge.name = "DifficultyBadge"
+	diff_badge.text = "🟢 普通"
+	diff_badge.add_theme_font_size_override("font_size", 16)
+	diff_badge.anchor_left   = 1.0
+	diff_badge.anchor_right  = 1.0
+	diff_badge.anchor_top    = 0.0
+	diff_badge.anchor_bottom = 0.0
+	diff_badge.offset_left   = -180
+	diff_badge.offset_right  = -10
+	diff_badge.offset_top    = 38
+	diff_badge.offset_bottom = 62
+	diff_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hud_layer.add_child(diff_badge)
+	hud_layer.difficulty_badge = diff_badge
+
+	# ── 顶部中央难度标识 ──
+	var center_diff_lbl = Label.new()
+	center_diff_lbl.name = "CenterDiffLabel"
+	center_diff_lbl.text = ""
+	center_diff_lbl.add_theme_font_size_override("font_size", 14)
+	center_diff_lbl.anchor_left   = 0.5
+	center_diff_lbl.anchor_right  = 0.5
+	center_diff_lbl.anchor_top    = 0.0
+	center_diff_lbl.anchor_bottom = 0.0
+	center_diff_lbl.offset_left   = -100
+	center_diff_lbl.offset_right  = 100
+	center_diff_lbl.offset_top    = 10
+	center_diff_lbl.offset_bottom = 32
+	center_diff_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud_layer.add_child(center_diff_lbl)
 
 # ────────────────────────────────────────
 # 注册演示内容（初始一把技能 + 被动）
@@ -630,6 +742,9 @@ func _apply_upgrade(choice: Dictionary) -> void:
 			for pd in UpgradeSystem.available_passives:
 				if pd.id == choice["passive_id"]:
 					player.apply_passive(pd)
+					# 通知成就系统
+					if achievement_system:
+						achievement_system.on_passive_picked()
 		"heal":
 			player.heal(player.max_hp * 0.3)
 		"evolve":
@@ -675,6 +790,9 @@ func _on_player_damaged(_current_hp: float, _max_hp: float) -> void:
 func _on_player_died() -> void:
 	get_tree().paused = true
 	EventBus.emit_signal("game_over", game_time, player.total_score if is_instance_valid(player) else 0)
+	# 每日挑战：标记完成
+	if daily_challenge and daily_modifier_type >= 0:
+		daily_challenge.mark_completed(meta_progress)
 	# 延迟0.8秒再弹结算，让死亡特效播完
 	get_tree().create_timer(0.8, true).timeout.connect(func():
 		if is_instance_valid(result_screen):

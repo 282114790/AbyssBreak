@@ -10,6 +10,14 @@ var is_running: bool = false
 var player: Node2D = null
 var boss_spawned: bool = false   # Boss 只生成一次
 
+# ── 无尽模式 ──
+var is_endless: bool = false
+var endless_wave_bonus: int = 0   # 无尽模式已循环次数（每次+1）
+var _endless_spawn_interval: float = 0.12
+var _endless_max_enemies: int = 9999
+var _endless_hp_mult: float = 1.0
+var _endless_count_mult: float = 1.0
+
 # 波次配置
 var wave_configs: Array = [
 	{"time": 0,   "wave": 1, "interval": 1.2,  "types": [0, 1],          "max": 40},
@@ -50,17 +58,40 @@ func _process(delta: float) -> void:
 	game_time += delta
 	spawn_timer -= delta
 
-	# 波次切换
-	for cfg in wave_configs:
-		if game_time >= cfg["time"] and cfg["wave"] > current_wave:
-			_apply_config(cfg)
+	# ── 无尽模式触发检测 ──
+	# 30分钟 = 1800秒，且已经是最后一波
+	if not is_endless and game_time >= 1800.0 and current_wave >= wave_configs.back()["wave"]:
+		is_endless = true
+		endless_wave_bonus = 0
+		EventBus.emit_signal("wave_changed", current_wave)  # 刷新HUD显示∞
+
+	# 波次切换（非无尽模式）
+	if not is_endless:
+		for cfg in wave_configs:
+			if game_time >= cfg["time"] and cfg["wave"] > current_wave:
+				_apply_config(cfg)
+
+	# 无尽模式：每30秒循环一次，递增难度
+	if is_endless:
+		var endless_cycle = int(game_time - 1800.0) / 30
+		if endless_cycle > endless_wave_bonus:
+			endless_wave_bonus = endless_cycle
+			_endless_hp_mult = 1.0 + endless_wave_bonus * 0.10
+			_endless_count_mult = 1.0 + endless_wave_bonus * 0.10
+			_endless_spawn_interval = max(0.05, 0.12 - endless_wave_bonus * 0.005)
 
 	# 生成敌人
 	if spawn_timer <= 0:
-		spawn_timer = current_config.get("interval", 2.0)
-		var max_e = current_config.get("max", 30)
-		if get_tree().get_nodes_in_group("enemies").size() < max_e:
-			_spawn_enemy()
+		if is_endless:
+			spawn_timer = _endless_spawn_interval
+			var cur_enemies = get_tree().get_nodes_in_group("enemies").size()
+			if cur_enemies < int(_endless_max_enemies):
+				_spawn_enemy()
+		else:
+			spawn_timer = current_config.get("interval", 2.0)
+			var max_e = current_config.get("max", 30)
+			if get_tree().get_nodes_in_group("enemies").size() < max_e:
+				_spawn_enemy()
 
 func _apply_config(cfg: Dictionary) -> void:
 	current_config = cfg
@@ -80,26 +111,32 @@ func _spawn_enemy() -> void:
 	_create_enemy_from_preset(preset)
 
 func _create_enemy_from_preset(preset: Dictionary) -> void:
-	# 程序化创建敌人
 	var enemy = CharacterBody2D.new()
 	enemy.set_script(load("res://scripts/enemies/EnemyBase.gd"))
 	enemy.add_to_group("enemies")
-
 	get_tree().current_scene.add_child(enemy)
 
-	# 创建 EnemyData
+	# 读取难度倍率
+	var diff = get_meta("difficulty") if has_meta("difficulty") else null
+	var hp_m   = diff.enemy_hp_mult    if diff else 1.0
+	var dmg_m  = diff.enemy_dmg_mult   if diff else 1.0
+	var spd_m  = diff.enemy_speed_mult if diff else 1.0
+
+	# 无尽模式叠加倍率
+	if is_endless:
+		hp_m  *= _endless_hp_mult
+		spd_m *= min(1.0 + endless_wave_bonus * 0.05, 2.0)  # 速度最多翻倍
+
 	var ed = EnemyData.new()
-	ed.display_name = preset["name"]
-	ed.max_hp       = preset["hp"]
-	ed.damage       = preset["dmg"]
-	ed.move_speed   = preset["spd"]
-	ed.size         = preset["size"]
-	ed.color        = preset["color"]
-	ed.exp_reward   = preset["exp"]
+	ed.display_name    = preset["name"]
+	ed.max_hp          = preset["hp"]   * hp_m
+	ed.damage          = preset["dmg"]  * dmg_m
+	ed.move_speed      = preset["spd"]  * spd_m
+	ed.size            = preset["size"]
+	ed.color           = preset["color"]
+	ed.exp_reward      = preset["exp"]
 	ed.attack_cooldown = preset["atk_cd"]
 	enemy.setup(ed)
-
-	# 屏幕外随机位置
 	enemy.global_position = _get_spawn_position()
 
 func _get_spawn_position() -> Vector2:

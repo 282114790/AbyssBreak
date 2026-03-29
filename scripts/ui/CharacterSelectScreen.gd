@@ -3,10 +3,12 @@
 extends CanvasLayer
 
 signal character_selected(character_id: String)
+signal daily_challenge_requested
 
 var _registry: Node = null
 var _meta: Node = null
 var _selected_id: String = "mage"
+var _daily_challenge: Node = null
 
 func _ready() -> void:
 	layer = 20
@@ -17,6 +19,10 @@ func show_screen(registry: Node, meta: Node) -> void:
 	_meta = meta
 	_selected_id = registry.selected_id
 	visible = true
+	# 初始化每日挑战
+	_daily_challenge = Node.new()
+	_daily_challenge.set_script(load("res://scripts/systems/DailyChallenge.gd"))
+	add_child(_daily_challenge)
 	_build_ui()
 	# 播放菜单BGM
 	var sm = get_tree().get_first_node_in_group("sound_manager")
@@ -78,6 +84,65 @@ func _build_ui() -> void:
 		emit_signal("character_selected", _selected_id)
 	)
 	add_child(start_btn)
+
+	# ── 每日挑战按钮 ──
+	var daily_btn = Button.new()
+	var is_done = _daily_challenge and _daily_challenge.is_completed_today()
+	var dc_config: Dictionary = {}
+	if _daily_challenge:
+		dc_config = _daily_challenge.get_challenge_config()
+
+	if is_done:
+		daily_btn.text = "✅ 每日挑战（今日已完成）"
+		daily_btn.disabled = true
+	else:
+		var mod_name = dc_config.get("modifier_name", "")
+		daily_btn.text = "📅 每日挑战 — %s" % mod_name
+
+	daily_btn.add_theme_font_size_override("font_size", 16)
+	daily_btn.custom_minimum_size = Vector2(340, 48)
+	daily_btn.anchor_left   = 0.5
+	daily_btn.anchor_right  = 0.5
+	daily_btn.anchor_top    = 1.0
+	daily_btn.anchor_bottom = 1.0
+	daily_btn.offset_left   = -170
+	daily_btn.offset_right  = 170
+	daily_btn.offset_top    = -150
+	daily_btn.offset_bottom = -100
+
+	if not is_done and not dc_config.is_empty():
+		var dc_style = StyleBoxFlat.new()
+		dc_style.bg_color = Color(0.08, 0.12, 0.25)
+		dc_style.border_color = Color(0.5, 0.7, 1.0)
+		dc_style.border_width_left = 2; dc_style.border_width_right = 2
+		dc_style.border_width_top = 2; dc_style.border_width_bottom = 2
+		dc_style.corner_radius_top_left = 4; dc_style.corner_radius_top_right = 4
+		dc_style.corner_radius_bottom_left = 4; dc_style.corner_radius_bottom_right = 4
+		daily_btn.add_theme_stylebox_override("normal", dc_style)
+
+	daily_btn.pressed.connect(func():
+		if _daily_challenge:
+			visible = false
+			emit_signal("daily_challenge_requested")
+	)
+	add_child(daily_btn)
+
+	# 每日挑战描述
+	if not is_done and not dc_config.is_empty():
+		var dc_desc = Label.new()
+		dc_desc.text = "%s  |  %s" % [dc_config.get("modifier_name", ""), dc_config.get("modifier_desc", "")]
+		dc_desc.add_theme_font_size_override("font_size", 13)
+		dc_desc.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
+		dc_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		dc_desc.anchor_left   = 0.5
+		dc_desc.anchor_right  = 0.5
+		dc_desc.anchor_top    = 1.0
+		dc_desc.anchor_bottom = 1.0
+		dc_desc.offset_left   = -300
+		dc_desc.offset_right  = 300
+		dc_desc.offset_top    = -100
+		dc_desc.offset_bottom = -80
+		add_child(dc_desc)
 
 func _make_card(char_data: Resource, unlocked: bool) -> PanelContainer:
 	var card = PanelContainer.new()

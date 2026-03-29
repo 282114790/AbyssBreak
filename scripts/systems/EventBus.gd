@@ -36,3 +36,8 @@ signal boss_died
 # UI
 signal show_level_up_panel(choices: Array)
 signal upgrade_chosen(choice: Dictionary)
+
+# 成就/每日挑战相关
+signal gem_collected(amount: int)
+signal skill_activated(skill_id: String)
+signal damage_dealt(position: Vector2, amount: int, color: Color)

@@ -11,6 +11,7 @@ func activate() -> void:
 	if not owner_player: return
 	var sm = get_tree().get_first_node_in_group("sound_manager")
 	if sm: sm.play_shoot()
+	EventBus.skill_activated.emit("void_rift")
 	_spawn_rift()
 
 func _spawn_rift() -> void:

@@ -152,12 +152,16 @@ func on_run_ended(wave: int, score: int, survive_seconds: float, kills: int) -> 
 	best_wave  = max(best_wave, wave)
 	best_score = max(best_score, score)
 
-	# 魂石奖励公式
 	var earned := 0
-	earned += wave * 5               # 每波 5 石
-	earned += kills / 10             # 每10击杀 1 石
-	earned += int(survive_seconds / 10)  # 每10秒 1 石
-	earned = max(earned, 3)          # 最低 3 石（鼓励新手）
+	earned += wave * 5
+	earned += kills / 10
+	earned += int(survive_seconds / 10)
+	earned = max(earned, 3)
+
+	# 应用难度魂石倍率
+	var gm = get_tree().root.find_child("Main", true, false)
+	if gm and gm.has_meta("current_difficulty_mult"):
+		earned = int(earned * gm.get_meta("current_difficulty_mult"))
 
 	soul_stones += earned
 	save()
