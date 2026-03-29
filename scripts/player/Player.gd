@@ -74,38 +74,47 @@ func _apply_meta_bonuses() -> void:
 	current_hp = max_hp
 
 func _setup_visual() -> void:
-	# 碰撞层：layer 1=player, mask 2=enemies
 	collision_layer = 1
 	collision_mask = 2
 
-	# 动态创建 AnimatedSprite2D
 	var anim_sprite = AnimatedSprite2D.new()
-	anim_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	anim_sprite.scale = Vector2(0.42, 0.42)
+	anim_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-	# 加载 spritesheet
-	var tex = load("res://assets/sprites/player/mage_walk_sheet.png")
+	# 读取角色数据中的精灵表配置
+	var char_data = get_meta("char_data", null)
+	var sheet_path = "res://assets/sprites/player/mage_walk_sheet.png"
+	var frame_w = 200
+	var frame_h = 192
+	var frame_count = 8
+	var disp_scale = 0.42
 
-	# 构建 SpriteFrames
+	if char_data and char_data.walk_sheet_path != "":
+		sheet_path    = char_data.walk_sheet_path
+		frame_w       = char_data.walk_frame_w
+		frame_h       = char_data.walk_frame_h
+		frame_count   = char_data.walk_frame_count
+		disp_scale    = 0.50  # 128px 帧用稍大缩放
+
+	anim_sprite.scale = Vector2(disp_scale, disp_scale)
+
+	var tex = load(sheet_path)
 	var frames = SpriteFrames.new()
 
-	# walk 动画：8帧，每帧 200x192
 	frames.add_animation("walk")
 	frames.set_animation_loop("walk", true)
 	frames.set_animation_speed("walk", 8.0)
-	for i in range(8):
+	for i in range(frame_count):
 		var atlas = AtlasTexture.new()
 		atlas.atlas = tex
-		atlas.region = Rect2(i * 200, 0, 200, 192)
+		atlas.region = Rect2(i * frame_w, 0, frame_w, frame_h)
 		frames.add_frame("walk", atlas)
 
-	# idle 动画：用第1帧静止
 	frames.add_animation("idle")
 	frames.set_animation_loop("idle", true)
 	frames.set_animation_speed("idle", 5.0)
 	var idle_atlas = AtlasTexture.new()
 	idle_atlas.atlas = tex
-	idle_atlas.region = Rect2(0, 0, 200, 192)
+	idle_atlas.region = Rect2(0, 0, frame_w, frame_h)
 	frames.add_frame("idle", idle_atlas)
 
 	anim_sprite.sprite_frames = frames
@@ -113,7 +122,6 @@ func _setup_visual() -> void:
 	visual = anim_sprite
 	visual.play("idle")
 
-	# 碰撞体
 	var col = CollisionShape2D.new()
 	var cap = CapsuleShape2D.new()
 	cap.radius = 12.0

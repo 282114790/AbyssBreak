@@ -16,3 +16,7 @@ class_name CharacterData
 
 @export var start_skill_ids: Array = []   # Array of String，不用类型约束
 @export var trait_desc: String = ""
+@export var walk_sheet_path: String = ""  # 行走动画精灵表路径（空=用程序化圆形）
+@export var walk_frame_count: int = 8    # 动画帧数
+@export var walk_frame_w: int = 128      # 单帧宽度px
+@export var walk_frame_h: int = 128      # 单帧高度px

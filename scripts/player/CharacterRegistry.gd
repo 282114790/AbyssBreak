@@ -38,6 +38,10 @@ func _register_all() -> void:
 	warrior.regen_base    = 3.0
 	warrior.start_skill_ids = ["iceblade"]
 	warrior.trait_desc    = "最大HP×1.8，每秒回血3"
+	warrior.walk_sheet_path  = "res://assets/sprites/warrior_walk_sheet.png"
+	warrior.walk_frame_count = 8
+	warrior.walk_frame_w     = 128
+	warrior.walk_frame_h     = 128
 	all_characters.append(warrior)
 
 	var hunter = CharacterDataScript.new()
