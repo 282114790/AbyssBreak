@@ -68,10 +68,12 @@ func _apply_config(cfg: Dictionary) -> void:
 	EventBus.emit_signal("wave_changed", current_wave)
 
 func _spawn_enemy() -> void:
-	# 第4波且 Boss 未生成 → 生成 Boss
+	# 第4波且 Boss 未生成 → 生成 Boss，切换BGM
 	if current_wave == 4 and not boss_spawned and current_config.get("boss", false):
 		boss_spawned = true
 		_create_enemy_from_preset(boss_preset)
+		var sm = get_tree().get_first_node_in_group("sound_manager")
+		if sm: sm.play_bgm_boss()
 
 	var types: Array = current_config.get("types", [0])
 	var preset = enemy_presets[types[randi() % types.size()]]

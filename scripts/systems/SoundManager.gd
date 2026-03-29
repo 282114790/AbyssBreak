@@ -27,8 +27,7 @@ func play_bgm_battle() -> void:
 	_play_bgm("res://assets/audio/bgm/bgm_battle.mp3")
 
 func play_bgm_boss() -> void:
-	# Boss BGM（暂时用battle代替，等Boss BGM生成后替换）
-	_play_bgm("res://assets/audio/bgm/bgm_battle.mp3")
+	_play_bgm("res://assets/audio/bgm/bgm_boss.mp3")
 
 func play_bgm_menu() -> void:
 	_play_bgm("res://assets/audio/bgm/bgm_menu.mp3")
