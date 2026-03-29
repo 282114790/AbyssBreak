@@ -62,8 +62,15 @@ func _setup_visual() -> void:
 		},
 	}
 
-	# 静态图兜底表（还没有 spritesheet 的怪物）
-	var static_map = {}
+	# 静态图兜底表（单帧精灵，用 Sprite2D 直接显示）
+	var static_map = {
+		"小恶魔":   "res://assets/sprites/enemies/enemy_demon.png",
+		"石头怪":   "res://assets/sprites/enemies/enemy_golem.png",
+		"暗影弓手": "res://assets/sprites/enemies/enemy_archer.png",
+		"火焰精灵": "res://assets/sprites/enemies/enemy_fire_sprite.png",
+		"骷髅战士": "res://assets/sprites/enemies/enemy_skeleton.png",
+		"深渊魔王": "res://assets/sprites/enemies/enemy_boss_abyss.png",
+	}
 
 
 	var anim_sprite = AnimatedSprite2D.new()
@@ -114,8 +121,10 @@ func _setup_visual() -> void:
 		atlas.region = Rect2(0, 0, tex.get_width(), tex.get_height())
 		sf.add_frame("idle", atlas)
 		anim_sprite.sprite_frames = sf
-		var scale_factor = 4.0 if (data and data.display_name == "深渊魔王") else 3.0
-		anim_sprite.scale = Vector2(scale_factor, scale_factor)
+		# 根据 data.size 设定显示尺寸（单位：游戏像素），图片本身128px
+		var display_px = (data.size if data else 16.0) * 2.5
+		var tex_size = float(max(tex.get_width(), tex.get_height()))
+		anim_sprite.scale = Vector2(display_px / tex_size, display_px / tex_size)
 		anim_sprite.play("idle")
 
 	add_child(anim_sprite)
