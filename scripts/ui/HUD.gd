@@ -112,16 +112,21 @@ func _show_upgrade_panel(choices: Array) -> void:
 	# 清除旧按钮（立即清除，不await，暂停时await会卡死）
 	for child in choice_buttons.get_children():
 		child.free()
+	# 图标资源
+	var skill_icon_map := {"fireball":0,"orbital":1,"lightning":2,"iceblade":3,"ice_blade":3,"frostzone":4,"runeblast":5,"poison_cloud":6,"void_rift":7,"blood_nova":8,"time_slow":9,"thorn_aura":10,"meteor_shower":11,"chain_lance":12,"holywave":13,"arcane_orb":14}
+	var passive_icon_map := {"boots":0,"power_ring":1,"iron_heart":2,"toxic_vial":3,"mana_crystal":4,"shadow_cloak":5,"attack_speed":6,"exp_ring":7}
+	var _sktex = load("res://assets/ui/skill_icons.png") if ResourceLoader.exists("res://assets/ui/skill_icons.png") else null
+	var _pstex = load("res://assets/ui/passive_icons.png") if ResourceLoader.exists("res://assets/ui/passive_icons.png") else null
 	# 生成新选项按钮
 	for i in range(choices.size()):
 		var choice = choices[i]
 		var btn = Button.new()
-		btn.text = "[%d] %s\n%s" % [i+1, choice["display_name"], choice.get("description", "")]
+		btn.text = "[%d] %s
+%s" % [i+1, choice["display_name"], choice.get("description", "")]
 		btn.custom_minimum_size = Vector2(240, 120)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.mouse_filter = Control.MOUSE_FILTER_STOP
 		btn.pressed.connect(_on_choice_selected.bind(choice))
-		# 样式：深色背景 + 蓝色边框
 		var btn_style = StyleBoxFlat.new()
 		btn_style.bg_color = Color(0.08, 0.08, 0.25)
 		btn_style.border_width_left = 1; btn_style.border_width_right = 1
@@ -134,6 +139,23 @@ func _show_upgrade_panel(choices: Array) -> void:
 		hover_style.bg_color = Color(0.15, 0.15, 0.4)
 		hover_style.border_color = Color(0.6, 0.8, 1.0)
 		btn.add_theme_stylebox_override("hover", hover_style)
+		var sid = choice.get("skill_id", choice.get("passive_id", ""))
+		if _sktex and skill_icon_map.has(sid):
+			var ir = TextureRect.new(); var at = AtlasTexture.new()
+			at.atlas = _sktex; at.region = Rect2(skill_icon_map[sid]*32,0,32,32)
+			ir.texture = at; ir.custom_minimum_size = Vector2(32,32)
+			ir.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			ir.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			ir.offset_left=6; ir.offset_top=6; ir.offset_right=38; ir.offset_bottom=38
+			btn.add_child(ir)
+		elif _pstex and passive_icon_map.has(sid):
+			var ir = TextureRect.new(); var at = AtlasTexture.new()
+			at.atlas = _pstex; at.region = Rect2(passive_icon_map[sid]*32,0,32,32)
+			ir.texture = at; ir.custom_minimum_size = Vector2(32,32)
+			ir.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			ir.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			ir.offset_left=6; ir.offset_top=6; ir.offset_right=38; ir.offset_bottom=38
+			btn.add_child(ir)
 		choice_buttons.add_child(btn)
 
 func _input(event: InputEvent) -> void:
@@ -239,12 +261,12 @@ func _show_upgrade_panel(choices: Array) -> void:
 	for i in range(choices.size()):
 		var choice = choices[i]
 		var btn = Button.new()
-		btn.text = "[%d] %s\n%s" % [i+1, choice["display_name"], choice.get("description", "")]
+		btn.text = "[%d] %s
+%s" % [i+1, choice["display_name"], choice.get("description", "")]
 		btn.custom_minimum_size = Vector2(240, 120)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.mouse_filter = Control.MOUSE_FILTER_STOP
 		btn.pressed.connect(_on_choice_selected.bind(choice))
-		# 样式：深色背景 + 蓝色边框
 		var btn_style = StyleBoxFlat.new()
 		btn_style.bg_color = Color(0.08, 0.08, 0.25)
 		btn_style.border_width_left = 1; btn_style.border_width_right = 1
@@ -257,6 +279,23 @@ func _show_upgrade_panel(choices: Array) -> void:
 		hover_style.bg_color = Color(0.15, 0.15, 0.4)
 		hover_style.border_color = Color(0.6, 0.8, 1.0)
 		btn.add_theme_stylebox_override("hover", hover_style)
+		var sid = choice.get("skill_id", choice.get("passive_id", ""))
+		if _sktex and skill_icon_map.has(sid):
+			var ir = TextureRect.new(); var at = AtlasTexture.new()
+			at.atlas = _sktex; at.region = Rect2(skill_icon_map[sid]*32,0,32,32)
+			ir.texture = at; ir.custom_minimum_size = Vector2(32,32)
+			ir.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			ir.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			ir.offset_left=6; ir.offset_top=6; ir.offset_right=38; ir.offset_bottom=38
+			btn.add_child(ir)
+		elif _pstex and passive_icon_map.has(sid):
+			var ir = TextureRect.new(); var at = AtlasTexture.new()
+			at.atlas = _pstex; at.region = Rect2(passive_icon_map[sid]*32,0,32,32)
+			ir.texture = at; ir.custom_minimum_size = Vector2(32,32)
+			ir.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			ir.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			ir.offset_left=6; ir.offset_top=6; ir.offset_right=38; ir.offset_bottom=38
+			btn.add_child(ir)
 		choice_buttons.add_child(btn)
 
 func _input(event: InputEvent) -> void:

@@ -1,5 +1,5 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1774799497
+::res://::1774799675
 PROJECT_STRUCTURE.md::TextFile::-1::1774172746::0::1::::<><><>0<>0<><>::
 TODO.csv::Translation::7400261657841705007::1774796239::1774797352::1::::<><><>0<>0<>7559f53d019427241ac0d3315aa46b49<>res://TODO.分类.translation<*>res://TODO.任务.translation<*>res://TODO.状态.translation<*>res://TODO.备注.translation::
 TODO.任务.translation::OptimizedTranslation::4386987403275669234::1774797352::0::1::::<><><>0<>0<><>::
@@ -83,8 +83,9 @@ floor_tile.png::CompressedTexture2D::4878812953342842084::1774286483::1774286531
 floor_tiles_strip.png::CompressedTexture2D::3174130929098928613::1774286483::1774286531::1::::<><><>0<>0<>6901d464444f8bd639717f6b38115fa3<>res://.godot/imported/floor_tiles_strip.png-d8e8b9226cc919cae9f1949a6c0c1a51.ctex::
 kenney_dungeon.png::CompressedTexture2D::7228842575121516913::1657033268::1774286087::1::::<><><>0<>0<>411e72bedc34fa31da97c960ad519bfe<>res://.godot/imported/kenney_dungeon.png-1041c4aaaea37ad763be8aff4de92b6c.ctex::
 torch_anim.png::CompressedTexture2D::8603060383002310701::1774778419::1774778832::1::::<><><>0<>0<>4433ac94ca8cdd3f49638127a36da77b<>res://.godot/imported/torch_anim.png-95490898a1e74743e0bfee5700292095.ctex::
-::res://assets/ui/::1774799427
+::res://assets/ui/::1774799561
 icon_soul_stone.png::CompressedTexture2D::6119642600017074670::1774789480::1774790682::1::::<><><>0<>0<>0fcdfc475943f21f8ec5a4f97cd73479<>res://.godot/imported/icon_soul_stone.png-3abb637e91243dd848f2e8a3e494635a.ctex::
+passive_icons.png::CompressedTexture2D::2184938734393997906::1774799561::1774799676::1::::<><><>0<>0<>e0b3aaf8d38e81320400104ad0ff0bc7<>res://.godot/imported/passive_icons.png-027dc82a7e24de4339ef5b0a260c4e0f.ctex::
 skill_icons.png::CompressedTexture2D::6788886382725263474::1774799427::1774799498::1::::<><><>0<>0<>ada1b72ec58432268a4a529e5489cd96<>res://.godot/imported/skill_icons.png-bb103ffea62e4446391861ca865941f9.ctex::
 ui_skill_slot.png::CompressedTexture2D::4036431434806155735::1774789570::1774790682::1::::<><><>0<>0<>8e3c460a55a3ff246ea6e51f0a190001<>res://.godot/imported/ui_skill_slot.png-d6dd5b1769e1442280b72778778456ae.ctex::
 ::res://assets_download/::1774285913
@@ -566,6 +567,6 @@ World.gd::GDScript::7282794165174922247::1774286047::0::1::::<>Node2D<><>0<>0<><
 ::res://scripts/ui/::1774797351
 CharacterSelectScreen.gd::GDScript::2064456687688142823::1774795839::0::1::::<>CanvasLayer<><>0<>0<><>::
 DifficultySelect.gd::GDScript::4715242805233997356::1774795436::0::1::::DifficultySelect<>CanvasLayer<><>0<>0<><>::
-HUD.gd::GDScript::4255053305451869875::1774796185::0::1::::<>CanvasLayer<><>0<>0<><>::
+HUD.gd::GDScript::4255053305451869875::1774799659::0::1::::<>CanvasLayer<><>0<>0<><>::
 RunResultScreen.gd::GDScript::1109244320950229774::1774786878::0::1::::<>CanvasLayer<><>0<>0<><>::
 UnlockScreen.gd::GDScript::5087442845633277054::1774787738::0::1::::<>CanvasLayer<><>0<>0<><>::
