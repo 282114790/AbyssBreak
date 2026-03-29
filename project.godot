@@ -32,6 +32,10 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=["res://addons/skill_editor/plugin.cfg"]
+
 [input]
 
 move_up={
