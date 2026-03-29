@@ -9,12 +9,16 @@ var camera: Camera2D
 var hud_layer: CanvasLayer
 var screen_shake: Node
 var sound_mgr: Node
+var meta_progress: Node       # 局外成长系统
+var result_screen: CanvasLayer  # 结算界面
+var unlock_screen: CanvasLayer  # 解锁界面
 
 # ── 经验宝石池 ──
 var gem_pool: Array = []
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS  # R键重启在暂停时也能响应
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	_setup_meta_progress()
 	_connect_event_bus()
 	_setup_camera()
 	_setup_background()
@@ -22,6 +26,7 @@ func _ready() -> void:
 	_setup_wave_manager()
 	_setup_sound_manager()
 	_setup_hud()
+	_setup_result_screen()
 	# 注册初始技能和被动（演示用）
 	_register_demo_content()
 	# 启动波次
@@ -110,6 +115,25 @@ func _setup_sound_manager() -> void:
 # ────────────────────────────────────────
 # HUD
 # ────────────────────────────────────────
+func _setup_meta_progress() -> void:
+	meta_progress = Node.new()
+	meta_progress.set_script(load("res://scripts/systems/MetaProgress.gd"))
+	meta_progress.name = "MetaProgress"
+	add_child(meta_progress)
+
+func _setup_result_screen() -> void:
+	result_screen = CanvasLayer.new()
+	result_screen.set_script(load("res://scripts/ui/RunResultScreen.gd"))
+	result_screen.name = "RunResultScreen"
+	result_screen.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(result_screen)
+
+	unlock_screen = CanvasLayer.new()
+	unlock_screen.set_script(load("res://scripts/ui/UnlockScreen.gd"))
+	unlock_screen.name = "UnlockScreen"
+	unlock_screen.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(unlock_screen)
+
 func _setup_hud() -> void:
 	hud_layer = CanvasLayer.new()
 	hud_layer.set_script(load("res://scripts/ui/HUD.gd"))
@@ -330,6 +354,7 @@ func _register_demo_content() -> void:
 # 经验宝石生成
 # ────────────────────────────────────────
 func _on_enemy_died(pos: Vector2, exp_val: int) -> void:
+	EventBus.total_kills += 1   # 击杀计数
 	# Boss死亡：exp_val >= 100 判断为boss，强震
 	if screen_shake:
 		if exp_val >= 100:
@@ -417,6 +442,18 @@ func _on_player_damaged(_current_hp: float, _max_hp: float) -> void:
 func _on_player_died() -> void:
 	get_tree().paused = true
 	EventBus.emit_signal("game_over", game_time, player.total_score if is_instance_valid(player) else 0)
+	# 延迟0.8秒再弹结算，让死亡特效播完
+	get_tree().create_timer(0.8, true).timeout.connect(func():
+		if is_instance_valid(result_screen):
+			var kills = get_tree().get_nodes_in_group("enemies").size()  # 粗略，后续用计数器
+			result_screen.show_result(
+				wave_manager.current_wave,
+				player.total_score if is_instance_valid(player) else 0,
+				game_time,
+				EventBus.total_kills if "total_kills" in EventBus else 0,
+				false
+			)
+	)
 
 # ────────────────────────────────────────
 # 摄像机跟随

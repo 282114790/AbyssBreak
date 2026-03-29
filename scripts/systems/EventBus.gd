@@ -2,8 +2,9 @@
 # 全局事件总线 - 解耦各系统间通信
 extends Node
 
-# 全局游戏暂停标志（独立于 get_tree().paused，专门控制敌人/波次逻辑）
+# 全局游戏暂停标志
 var game_logic_paused: bool = false
+var total_kills: int = 0   # 本局击杀计数
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS

@@ -42,9 +42,26 @@ func _ready() -> void:
 	current_hp = max_hp
 	move_speed = base_move_speed
 	pickup_radius = base_pickup_radius
+	_apply_meta_bonuses()
 	_setup_visual()
 	EventBus.emit_signal("player_exp_changed", current_exp, exp_to_next)
 	EventBus.emit_signal("player_damaged", current_hp, max_hp)
+
+func _apply_meta_bonuses() -> void:
+	# 等 MetaProgress 节点就绪后读取加成
+	await get_tree().process_frame
+	var meta = get_tree().root.find_child("MetaProgress", true, false)
+	if meta == null: return
+
+	max_hp         = base_max_hp       * meta.get_hp_bonus()
+	current_hp     = max_hp
+	move_speed     = base_move_speed   * meta.get_speed_bonus()
+	pickup_radius  = base_pickup_radius * meta.get_pickup_bonus()
+	regen_per_second += meta.get_regen_bonus()
+	damage_multiplier  *= meta.get_damage_bonus()
+	attack_speed_multiplier *= meta.get_attack_speed_bonus()
+	exp_multiplier  *= meta.get_exp_bonus()
+	max_skill_slots += meta.get_extra_skill_slots()
 
 func _setup_visual() -> void:
 	# 碰撞层：layer 1=player, mask 2=enemies
