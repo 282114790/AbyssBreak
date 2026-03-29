@@ -279,17 +279,22 @@ func _create_popup_ui(ach: Dictionary) -> void:
 	canvas.add_child(panel)
 
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.14, 0.08, 0.95)
-	style.border_color = Color(0.2, 0.8, 0.3)
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.border_width_top = 2
-	style.border_width_bottom = 2
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
+	style.bg_color = Color(0.06, 0.10, 0.06, 0.95)
+	style.border_color = Color(0.8, 0.7, 0.2)
+	style.border_width_left = 2; style.border_width_right = 2
+	style.border_width_top = 2; style.border_width_bottom = 2
+	style.corner_radius_top_left = 6; style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6; style.corner_radius_bottom_right = 6
 	panel.add_theme_stylebox_override("panel", style)
+	# 成就弹窗背景纹理
+	if ResourceLoader.exists("res://assets/ui/achievement_popup_bg.png"):
+		var bg = TextureRect.new()
+		bg.texture = load("res://assets/ui/achievement_popup_bg.png")
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		bg.modulate = Color(1, 1, 1, 0.35)
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_child(bg)
 
 	var vbox = VBoxContainer.new()
 	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)

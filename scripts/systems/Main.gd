@@ -322,6 +322,15 @@ func _setup_hud() -> void:
 	style.corner_radius_top_left = 8; style.corner_radius_top_right = 8
 	style.corner_radius_bottom_left = 8; style.corner_radius_bottom_right = 8
 	panel.add_theme_stylebox_override("panel", style)
+	# 石纹背景纹理叠加
+	if ResourceLoader.exists("res://assets/ui/ui_panel_bg.png"):
+		var bg_rect = TextureRect.new()
+		bg_rect.texture = load("res://assets/ui/ui_panel_bg.png")
+		bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg_rect.stretch_mode = TextureRect.STRETCH_TILE
+		bg_rect.modulate = Color(1,1,1,0.18)
+		bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_child(bg_rect)
 	hud_layer.add_child(panel)
 	hud_layer.level_up_panel = panel
 

@@ -1,5 +1,5 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1774799675
+::res://::1774800170
 PROJECT_STRUCTURE.md::TextFile::-1::1774172746::0::1::::<><><>0<>0<><>::
 TODO.csv::Translation::7400261657841705007::1774796239::1774797352::1::::<><><>0<>0<>7559f53d019427241ac0d3315aa46b49<>res://TODO.分类.translation<*>res://TODO.任务.translation<*>res://TODO.状态.translation<*>res://TODO.备注.translation::
 TODO.任务.translation::OptimizedTranslation::4386987403275669234::1774797352::0::1::::<><><>0<>0<><>::
@@ -83,10 +83,12 @@ floor_tile.png::CompressedTexture2D::4878812953342842084::1774286483::1774286531
 floor_tiles_strip.png::CompressedTexture2D::3174130929098928613::1774286483::1774286531::1::::<><><>0<>0<>6901d464444f8bd639717f6b38115fa3<>res://.godot/imported/floor_tiles_strip.png-d8e8b9226cc919cae9f1949a6c0c1a51.ctex::
 kenney_dungeon.png::CompressedTexture2D::7228842575121516913::1657033268::1774286087::1::::<><><>0<>0<>411e72bedc34fa31da97c960ad519bfe<>res://.godot/imported/kenney_dungeon.png-1041c4aaaea37ad763be8aff4de92b6c.ctex::
 torch_anim.png::CompressedTexture2D::8603060383002310701::1774778419::1774778832::1::::<><><>0<>0<>4433ac94ca8cdd3f49638127a36da77b<>res://.godot/imported/torch_anim.png-95490898a1e74743e0bfee5700292095.ctex::
-::res://assets/ui/::1774799561
+::res://assets/ui/::1774799947
+achievement_popup_bg.png::CompressedTexture2D::1604826579493381852::1774800144::1774800171::1::::<><><>0<>0<>b201a83d35c61064eaa7dceb48d00d5d<>res://.godot/imported/achievement_popup_bg.png-40c67dcaadd8f9c19e8664a4afa97c2c.ctex::
 icon_soul_stone.png::CompressedTexture2D::6119642600017074670::1774789480::1774790682::1::::<><><>0<>0<>0fcdfc475943f21f8ec5a4f97cd73479<>res://.godot/imported/icon_soul_stone.png-3abb637e91243dd848f2e8a3e494635a.ctex::
 passive_icons.png::CompressedTexture2D::2184938734393997906::1774799561::1774799676::1::::<><><>0<>0<>e0b3aaf8d38e81320400104ad0ff0bc7<>res://.godot/imported/passive_icons.png-027dc82a7e24de4339ef5b0a260c4e0f.ctex::
 skill_icons.png::CompressedTexture2D::6788886382725263474::1774799427::1774799498::1::::<><><>0<>0<>ada1b72ec58432268a4a529e5489cd96<>res://.godot/imported/skill_icons.png-bb103ffea62e4446391861ca865941f9.ctex::
+ui_panel_bg.png::CompressedTexture2D::4605908556307704605::1774799882::1774800171::1::::<><><>0<>0<>2c1f8f84f3beabc1d1a479cb86b50edc<>res://.godot/imported/ui_panel_bg.png-270c00c51dcc78890e2f3e64a5c8999a.ctex::
 ui_skill_slot.png::CompressedTexture2D::4036431434806155735::1774789570::1774790682::1::::<><><>0<>0<>8e3c460a55a3ff246ea6e51f0a190001<>res://.godot/imported/ui_skill_slot.png-d6dd5b1769e1442280b72778778456ae.ctex::
 ::res://assets_download/::1774285913
 ::res://assets_download/kenney_tiny-dungeon/::1774286087
@@ -547,7 +549,7 @@ SkillThornAura.gd::GDScript::9127945081381647177::1774791272::0::1::::SkillThorn
 SkillTimeSlow.gd::GDScript::178752233819276990::1774791257::0::1::::SkillTimeSlow<>SkillBase<><>0<>0<><>::
 SkillVoidRift.gd::GDScript::6145700805519328492::1774795717::0::1::::SkillVoidRift<>SkillBase<><>0<>0<><>::
 ::res://scripts/systems/::1774797351
-AchievementSystem.gd::GDScript::6707799957500451597::1774796027::0::1::::<>Node<><>0<>0<><>::
+AchievementSystem.gd::GDScript::6707799957500451597::1774800154::0::1::::<>Node<><>0<>0<><>::
 DailyChallenge.gd::GDScript::6070950180121342266::1774795805::0::1::::<>Node<><>0<>0<><>::
 DamageNumber.gd::GDScript::5695124122354416367::1774180620::0::1::::<>Node2D<><>0<>0<><>::
 DeathEffect.gd::GDScript::5005775767298793326::1774283205::0::1::::<>Node2D<><>0<>0<><>::
@@ -555,7 +557,7 @@ DifficultyData.gd::GDScript::4268615292605000750::1774795420::0::1::::<>Resource
 EventBus.gd::GDScript::3966940400105939067::1774796084::0::1::::<>Node<><>0<>0<><>::
 ExperienceGem.gd::GDScript::2212364162658227354::1774795703::0::1::::ExperienceGem<>Area2D<><>0<>0<><>::
 GameManager.gd::GDScript::223666777030938622::1774172719::0::1::::GameManager<>Node<><>0<>0<><>::
-Main.gd::GDScript::757659570647093984::1774799480::0::1::::<>Node2D<><>0<>0<><>::
+Main.gd::GDScript::757659570647093984::1774799916::0::1::::<>Node2D<><>0<>0<><>::
 MetaProgress.gd::GDScript::8172371653970587498::1774791587::0::1::::<>Node<><>0<>0<><>::
 PassiveData.gd::GDScript::6921030082026674419::1774791386::0::1::::PassiveData<>Resource<><>0<>0<><>::
 ScreenShake.gd::GDScript::6197542601900394391::1774179271::0::1::::<>Node<><>0<>0<><>::
