@@ -205,6 +205,25 @@ func _setup_hud() -> void:
 	hud_layer.add_child(timer_lbl)
 	hud_layer.timer_label = timer_lbl
 
+	# 魂石显示（右上角，图标+数值）
+	var soul_row = HBoxContainer.new()
+	soul_row.position = Vector2(1100, 10)
+	soul_row.add_theme_constant_override("separation", 4)
+	hud_layer.add_child(soul_row)
+
+	var soul_icon = TextureRect.new()
+	soul_icon.texture = load("res://assets/ui/icon_soul_stone.png")
+	soul_icon.custom_minimum_size = Vector2(24, 24)
+	soul_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	soul_row.add_child(soul_icon)
+
+	var soul_lbl = Label.new()
+	soul_lbl.text = str(meta_progress.soul_stones if meta_progress else 0)
+	soul_lbl.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
+	soul_lbl.name = "SoulStoneLabel"
+	soul_row.add_child(soul_lbl)
+	hud_layer.set_meta("soul_label", soul_lbl)
+
 	# 波次
 	var wave_lbl = Label.new()
 	wave_lbl.position = Vector2(10,52); wave_lbl.size = Vector2(140,20); wave_lbl.text = "第 1 波"
@@ -241,6 +260,20 @@ func _setup_hud() -> void:
 	choices.add_theme_constant_override("separation", 16)
 	panel.add_child(choices)
 	hud_layer.choice_buttons = choices
+
+	# 技能槽（底部居中，最多6个）
+	var skill_bar = HBoxContainer.new()
+	skill_bar.anchor_left   = 0.5
+	skill_bar.anchor_right  = 0.5
+	skill_bar.anchor_top    = 1.0
+	skill_bar.anchor_bottom = 1.0
+	skill_bar.offset_left   = -240
+	skill_bar.offset_right  = 240
+	skill_bar.offset_top    = -88
+	skill_bar.offset_bottom = -8
+	skill_bar.add_theme_constant_override("separation", 8)
+	hud_layer.add_child(skill_bar)
+	hud_layer.set_meta("skill_bar", skill_bar)
 
 	# 注入 game_manager 引用（用于计时）
 	hud_layer.game_manager = self
@@ -516,10 +549,59 @@ func _on_player_died() -> void:
 func _process(_delta: float) -> void:
 	if is_instance_valid(player) and is_instance_valid(camera):
 		camera.global_position = player.global_position
+	# 更新魂石显示
+	if meta_progress and hud_layer and hud_layer.has_meta("soul_label"):
+		var lbl = hud_layer.get_meta("soul_label")
+		if is_instance_valid(lbl):
+			lbl.text = str(meta_progress.soul_stones)
+	# 更新技能槽
+	_update_skill_bar()
 
 # HUD 需要的 game_time 接口
 var game_time: float = 0.0
 var game_over_flag: bool = false
+
+var _skill_bar_cache: int = -1  # 技能数量缓存，变化时才重建
+
+func _update_skill_bar() -> void:
+	if not hud_layer or not hud_layer.has_meta("skill_bar"): return
+	if not is_instance_valid(player): return
+	var bar = hud_layer.get_meta("skill_bar")
+	if not is_instance_valid(bar): return
+
+	var skill_count = player.skills.size()
+	if skill_count == _skill_bar_cache: return  # 没变化不重建
+	_skill_bar_cache = skill_count
+
+	for c in bar.get_children(): c.queue_free()
+
+	var slot_tex = load("res://assets/ui/ui_skill_slot.png")
+	for i in range(max(skill_count, 1)):
+		var slot = TextureRect.new()
+		slot.texture = slot_tex
+		slot.custom_minimum_size = Vector2(72, 72)
+		slot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
+		if i < skill_count:
+			var skill = player.skills[i]
+			var name_lbl = Label.new()
+			name_lbl.text = skill.data.display_name if skill.data else "?"
+			name_lbl.add_theme_font_size_override("font_size", 10)
+			name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			name_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+			name_lbl.offset_bottom = 0
+			name_lbl.offset_top = -18
+			slot.add_child(name_lbl)
+
+			var lv_lbl = Label.new()
+			lv_lbl.text = "Lv%d" % skill.level
+			lv_lbl.add_theme_font_size_override("font_size", 9)
+			lv_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.3))
+			lv_lbl.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+			lv_lbl.offset_left = -24; lv_lbl.offset_top = 2
+			slot.add_child(lv_lbl)
+
+		bar.add_child(slot)
 
 func _physics_process(delta: float) -> void:
 	if not get_tree().paused:
