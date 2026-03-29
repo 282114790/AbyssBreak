@@ -2,12 +2,11 @@ extends Node2D
 
 # ============================================================
 #  深渊突围 — 分层背景系统 v2
-#  Layer 1 (-10): 基础地板  — Perlin 噪声选 tile，kenney_dungeon
-#  Layer 2 (-9) : 细节叠加  — floor_detail_overlay，正片叠底
-#  Layer 3 (-8) : 区域网格  — 16×16格房间边界，暗色线
-#  Layer 4 (-7) : 散点装饰  — floor_deco_props（骨堆/柱子/蛛网等）
-#  Layer 5 (-6) : 火把动画  — torch_anim（4帧，AnimatedSprite2D）
+#  map_theme: "dungeon"(默认) | "ice" | "lava"
 # ============================================================
+
+# 地图主题（由 Main.gd 在初始化前设置）
+var map_theme: String = "dungeon"
 
 const TILE_PX    := 16
 const SCALE_F    := 4.0
@@ -18,10 +17,8 @@ const ROOM_TILES := 16
 const ROOM_SIZE  := DISPLAY * ROOM_TILES
 
 # Layer 1 —— floor_layer1.png（8tile横排，每tile16px）
-# tile索引 0-3: 第一行，4-7: 第二行
 const FLOOR_TILE_COUNT : int = 8
 const FLOOR_TILE_PX    : int = 16
-# 权重：前4个（规则石砖）多，后4个（碎石/苔藓）少，增加变化
 const FLOOR_WEIGHTS : Array[int] = [5, 5, 5, 5, 2, 2, 2, 2]
 
 # Layer 2
@@ -87,7 +84,14 @@ func _setup_noise() -> void:
 	_noise_torch.seed  = 512;  _noise_torch.noise_type  = FastNoiseLite.TYPE_SIMPLEX; _noise_torch.frequency  = 0.04
 
 func _load_textures() -> void:
-	_tex_floor1 = load("res://assets/tilesets/floor_layer1.png")
+	# 根据地图主题切换地板贴图
+	match map_theme:
+		"ice":
+			_tex_floor1 = load("res://assets/tilesets/floor_ice.png")
+		"lava":
+			_tex_floor1 = load("res://assets/tilesets/floor_lava.png")
+		_:  # dungeon (default)
+			_tex_floor1 = load("res://assets/tilesets/floor_layer1.png")
 	_tex_detail = load("res://assets/tilesets/floor_detail_overlay.png")
 	_tex_deco   = load("res://assets/tilesets/floor_deco_props.png")
 	_tex_torch  = load("res://assets/tilesets/torch_anim.png")
@@ -221,8 +225,17 @@ func _place_floor_tile(sp: Sprite2D, c: int, r: int, wx: float, wy: float) -> vo
 
 	sp.texture = _tex_floor1
 	sp.region_enabled = true
-	sp.region_rect = Rect2(chosen * FLOOR_TILE_PX, 0, FLOOR_TILE_PX, FLOOR_TILE_PX)
-	sp.scale = Vector2(SCALE_F, SCALE_F)
+	# 根据贴图类型选择切片方式
+	if map_theme == "dungeon":
+		# floor_layer1: 横排8tile，每tile 16px
+		sp.region_rect = Rect2(chosen * FLOOR_TILE_PX, 0, FLOOR_TILE_PX, FLOOR_TILE_PX)
+		sp.scale = Vector2(SCALE_F, SCALE_F)
+	else:
+		# ice/lava: 4列×2行，每tile 256×128px，共8tile
+		var col = chosen % 4
+		var row = chosen / 4
+		sp.region_rect = Rect2(col * 256, row * 128, 256, 128)
+		sp.scale = Vector2(DISPLAY / 256.0, DISPLAY / 128.0)  # 拉伸到64×64显示
 	sp.position = Vector2(wx, wy)
 	sp.z_index = -10
 	sp.modulate = Color(1.0, 1.0, 1.0, 1.0)
