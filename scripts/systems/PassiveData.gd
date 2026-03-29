@@ -17,3 +17,4 @@ class_name PassiveData
 @export var pickup_radius_bonus: float = 0.0 # 吸收范围加成
 @export var exp_bonus: float = 0.0         # 经验加成（百分比）
 @export var regen_bonus: float = 0.0       # 每秒回血量
+@export var cooldown_bonus: float = 0.0    # 冷却时间加成（百分比，负值=减少）

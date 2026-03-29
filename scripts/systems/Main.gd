@@ -403,6 +403,143 @@ func _register_demo_content() -> void:
 	holywave_data.level_up_damage = 8.0
 	UpgradeSystem.available_skills.append(holywave_data)
 
+	# ── 新增技能 ──
+
+	# 毒雾领域
+	var poison_data = load("res://scripts/skills/SkillData.gd").new()
+	poison_data.id = "poison_cloud"
+	poison_data.display_name = "☠ 毒雾领域"
+	poison_data.description = "周身毒雾持续中毒敌人，升级扩大范围"
+	poison_data.max_level = 5
+	poison_data.cooldown = 0.0
+	poison_data.scene_path = "res://scripts/skills/SkillPoisonCloud.gd"
+	poison_data.damage = 8.0
+	poison_data.level_up_damage = 5.0
+	poison_data.evolve_passive_id = "toxic_vial"
+	poison_data.evolved_skill_id = "poison_evolved"
+	UpgradeSystem.available_skills.append(poison_data)
+
+	# 虚空裂缝
+	var void_data = load("res://scripts/skills/SkillData.gd").new()
+	void_data.id = "void_rift"
+	void_data.display_name = "🌑 虚空裂缝"
+	void_data.description = "生成黑洞吸引并持续伤害周围敌人"
+	void_data.max_level = 5
+	void_data.cooldown = 6.0
+	void_data.level_up_cooldown = -0.3
+	void_data.scene_path = "res://scripts/skills/SkillVoidRift.gd"
+	void_data.damage = 20.0
+	void_data.level_up_damage = 10.0
+	UpgradeSystem.available_skills.append(void_data)
+
+	# 奥术弹幕
+	var orb_data = load("res://scripts/skills/SkillData.gd").new()
+	orb_data.id = "arcane_orb"
+	orb_data.display_name = "💠 奥术弹幕"
+	orb_data.description = "多颗弹幕公转后向外飞射，升级增加数量"
+	orb_data.max_level = 5
+	orb_data.cooldown = 2.5
+	orb_data.level_up_cooldown = -0.2
+	orb_data.scene_path = "res://scripts/skills/SkillArcaneOrb.gd"
+	orb_data.damage = 22.0
+	orb_data.level_up_damage = 12.0
+	orb_data.evolve_passive_id = "power_ring"
+	orb_data.evolved_skill_id = "arcane_evolved"
+	UpgradeSystem.available_skills.append(orb_data)
+
+	# 血月新星
+	var nova_data = load("res://scripts/skills/SkillData.gd").new()
+	nova_data.id = "blood_nova"
+	nova_data.display_name = "🩸 血月新星"
+	nova_data.description = "消耗5%HP释放血色冲击波，HP越低伤害越高"
+	nova_data.max_level = 5
+	nova_data.cooldown = 3.5
+	nova_data.level_up_cooldown = -0.2
+	nova_data.scene_path = "res://scripts/skills/SkillBloodNova.gd"
+	nova_data.damage = 35.0
+	nova_data.level_up_damage = 18.0
+	UpgradeSystem.available_skills.append(nova_data)
+
+	# 时间减速
+	var slow_data = load("res://scripts/skills/SkillData.gd").new()
+	slow_data.id = "time_slow"
+	slow_data.display_name = "⏳ 时间减速"
+	slow_data.description = "减慢所有敌人80%速度，持续时间随等级增加"
+	slow_data.max_level = 5
+	slow_data.cooldown = 8.0
+	slow_data.level_up_cooldown = -0.5
+	slow_data.scene_path = "res://scripts/skills/SkillTimeSlow.gd"
+	slow_data.damage = 0.0
+	slow_data.level_up_damage = 0.0
+	UpgradeSystem.available_skills.append(slow_data)
+
+	# 荆棘护甲
+	var thorn_data = load("res://scripts/skills/SkillData.gd").new()
+	thorn_data.id = "thorn_aura"
+	thorn_data.display_name = "🌿 荆棘护甲"
+	thorn_data.description = "受击时反弹50%伤害，周身荆棘光环"
+	thorn_data.max_level = 5
+	thorn_data.cooldown = 0.0
+	thorn_data.scene_path = "res://scripts/skills/SkillThornAura.gd"
+	thorn_data.damage = 0.0
+	thorn_data.level_up_damage = 0.0
+	UpgradeSystem.available_skills.append(thorn_data)
+
+	# 陨石雨
+	var meteor_data = load("res://scripts/skills/SkillData.gd").new()
+	meteor_data.id = "meteor_shower"
+	meteor_data.display_name = "☄ 陨石雨"
+	meteor_data.description = "从天而降多颗陨石砸向敌人密集区域"
+	meteor_data.max_level = 5
+	meteor_data.cooldown = 5.0
+	meteor_data.level_up_cooldown = -0.3
+	meteor_data.scene_path = "res://scripts/skills/SkillMeteorShower.gd"
+	meteor_data.damage = 40.0
+	meteor_data.level_up_damage = 20.0
+	UpgradeSystem.available_skills.append(meteor_data)
+
+	# 穿刺长枪
+	var lance_data = load("res://scripts/skills/SkillData.gd").new()
+	lance_data.id = "chain_lance"
+	lance_data.display_name = "🏹 穿刺长枪"
+	lance_data.description = "穿透长枪贯穿多个敌人，升级增加穿透数"
+	lance_data.max_level = 5
+	lance_data.cooldown = 1.2
+	lance_data.level_up_cooldown = -0.1
+	lance_data.scene_path = "res://scripts/skills/SkillChainLance.gd"
+	lance_data.damage = 35.0
+	lance_data.level_up_damage = 18.0
+	UpgradeSystem.available_skills.append(lance_data)
+
+	# ── 新增被动 ──
+
+	# 毒液瓶（毒雾进化用）
+	var toxic_passive = load("res://scripts/systems/PassiveData.gd").new()
+	toxic_passive.id = "toxic_vial"
+	toxic_passive.display_name = "毒液瓶"
+	toxic_passive.description = "技能伤害+20%，中毒效果持续时间+1s"
+	toxic_passive.max_level = 5
+	toxic_passive.damage_bonus = 0.20
+	UpgradeSystem.available_passives.append(toxic_passive)
+
+	# 法力水晶
+	var mana_passive = load("res://scripts/systems/PassiveData.gd").new()
+	mana_passive.id = "mana_crystal"
+	mana_passive.display_name = "法力水晶"
+	mana_passive.description = "技能冷却时间-15%"
+	mana_passive.max_level = 5
+	mana_passive.cooldown_bonus = -0.15
+	UpgradeSystem.available_passives.append(mana_passive)
+
+	# 暗影斗篷
+	var shadow_passive = load("res://scripts/systems/PassiveData.gd").new()
+	shadow_passive.id = "shadow_cloak"
+	shadow_passive.display_name = "暗影斗篷"
+	shadow_passive.description = "移动速度+15%，击杀敌人恢复1HP"
+	shadow_passive.max_level = 5
+	shadow_passive.move_speed_bonus = 0.15
+	UpgradeSystem.available_passives.append(shadow_passive)
+
 	# ── 给玩家装备初始技能（根据角色选择）──
 	var char_data = player.get_meta("char_data", null)
 	var start_ids: Array = ["fireball"]  # 默认
@@ -411,14 +548,22 @@ func _register_demo_content() -> void:
 
 	# 技能ID → 脚本路径映射
 	var skill_script_map := {
-		"fireball":  "res://scripts/skills/SkillFireball.gd",
-		"lightning": "res://scripts/skills/SkillLightning.gd",
-		"ice_blade": "res://scripts/skills/SkillIceBlade.gd",
-		"iceblade":  "res://scripts/skills/SkillIceBlade.gd",
-		"orbital":   "res://scripts/skills/SkillOrbital.gd",
-		"holywave":  "res://scripts/skills/SkillHolyWave.gd",
-		"frostzone": "res://scripts/skills/SkillFrostZone.gd",
-		"runeblast": "res://scripts/skills/SkillRuneBlast.gd",
+		"fireball":      "res://scripts/skills/SkillFireball.gd",
+		"lightning":     "res://scripts/skills/SkillLightning.gd",
+		"ice_blade":     "res://scripts/skills/SkillIceBlade.gd",
+		"iceblade":      "res://scripts/skills/SkillIceBlade.gd",
+		"orbital":       "res://scripts/skills/SkillOrbital.gd",
+		"holywave":      "res://scripts/skills/SkillHolyWave.gd",
+		"frostzone":     "res://scripts/skills/SkillFrostZone.gd",
+		"runeblast":     "res://scripts/skills/SkillRuneBlast.gd",
+		"poison_cloud":  "res://scripts/skills/SkillPoisonCloud.gd",
+		"void_rift":     "res://scripts/skills/SkillVoidRift.gd",
+		"arcane_orb":    "res://scripts/skills/SkillArcaneOrb.gd",
+		"blood_nova":    "res://scripts/skills/SkillBloodNova.gd",
+		"time_slow":     "res://scripts/skills/SkillTimeSlow.gd",
+		"thorn_aura":    "res://scripts/skills/SkillThornAura.gd",
+		"meteor_shower": "res://scripts/skills/SkillMeteorShower.gd",
+		"chain_lance":   "res://scripts/skills/SkillChainLance.gd",
 	}
 
 	for sid in start_ids:

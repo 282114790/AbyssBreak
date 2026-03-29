@@ -234,8 +234,12 @@ func apply_passive(passive_data: PassiveData) -> void:
 	pickup_radius += passive_data.pickup_radius_bonus
 	exp_multiplier += passive_data.exp_bonus
 	regen_per_second += passive_data.regen_bonus
+	# 冷却加成：减少所有已装备技能的冷却
+	if passive_data.cooldown_bonus != 0.0:
+		for skill in skills:
+			if skill.data:
+				skill.data.cooldown = max(0.1, skill.data.cooldown * (1.0 + passive_data.cooldown_bonus))
 	EventBus.emit_signal("player_damaged", current_hp, max_hp)
-	# 检查技能进化
 	_check_evolutions()
 
 func add_skill(skill_instance: SkillBase) -> void:
