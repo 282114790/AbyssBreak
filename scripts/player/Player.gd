@@ -48,20 +48,30 @@ func _ready() -> void:
 	EventBus.emit_signal("player_damaged", current_hp, max_hp)
 
 func _apply_meta_bonuses() -> void:
-	# 等 MetaProgress 节点就绪后读取加成
 	await get_tree().process_frame
-	var meta = get_tree().root.find_child("MetaProgress", true, false)
-	if meta == null: return
 
-	max_hp         = base_max_hp       * meta.get_hp_bonus()
-	current_hp     = max_hp
-	move_speed     = base_move_speed   * meta.get_speed_bonus()
-	pickup_radius  = base_pickup_radius * meta.get_pickup_bonus()
-	regen_per_second += meta.get_regen_bonus()
-	damage_multiplier  *= meta.get_damage_bonus()
-	attack_speed_multiplier *= meta.get_attack_speed_bonus()
-	exp_multiplier  *= meta.get_exp_bonus()
-	max_skill_slots += meta.get_extra_skill_slots()
+	# ① 应用角色基础属性倍率
+	var char_data = get_meta("char_data", null)
+	if char_data:
+		max_hp           = base_max_hp       * char_data.hp_mult
+		move_speed       = base_move_speed   * char_data.speed_mult
+		pickup_radius    = base_pickup_radius * char_data.pickup_mult
+		regen_per_second += char_data.regen_base
+		damage_multiplier *= char_data.damage_mult
+
+	# ② 应用 Meta 永久解锁加成
+	var meta = get_tree().root.find_child("MetaProgress", true, false)
+	if meta:
+		max_hp           = max_hp        * meta.get_hp_bonus()
+		move_speed       = move_speed    * meta.get_speed_bonus()
+		pickup_radius    = pickup_radius * meta.get_pickup_bonus()
+		regen_per_second += meta.get_regen_bonus()
+		damage_multiplier  *= meta.get_damage_bonus()
+		attack_speed_multiplier *= meta.get_attack_speed_bonus()
+		exp_multiplier   *= meta.get_exp_bonus()
+		max_skill_slots  += meta.get_extra_skill_slots()
+
+	current_hp = max_hp
 
 func _setup_visual() -> void:
 	# 碰撞层：layer 1=player, mask 2=enemies

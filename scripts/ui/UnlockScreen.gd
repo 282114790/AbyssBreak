@@ -79,11 +79,14 @@ func _build_ui() -> void:
 	# 底部返回
 	var back_btn = Button.new()
 	back_btn.text = "← 返回"
-	back_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	back_btn.offset_left = 20
+	back_btn.anchor_left   = 0.0
+	back_btn.anchor_right  = 0.0
+	back_btn.anchor_top    = 1.0
+	back_btn.anchor_bottom = 1.0
+	back_btn.offset_left   = 20
+	back_btn.offset_right  = 180
+	back_btn.offset_top    = -60
 	back_btn.offset_bottom = -16
-	back_btn.offset_top = -60
-	back_btn.offset_right = 160
 	back_btn.pressed.connect(func(): visible = false)
 	add_child(back_btn)
 

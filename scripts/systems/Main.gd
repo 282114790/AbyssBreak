@@ -9,9 +9,11 @@ var camera: Camera2D
 var hud_layer: CanvasLayer
 var screen_shake: Node
 var sound_mgr: Node
-var meta_progress: Node       # 局外成长系统
-var result_screen: CanvasLayer  # 结算界面
-var unlock_screen: CanvasLayer  # 解锁界面
+var meta_progress: Node
+var result_screen: CanvasLayer
+var unlock_screen: CanvasLayer
+var char_registry: Node
+var char_select_screen: CanvasLayer
 
 # ── 经验宝石池 ──
 var gem_pool: Array = []
@@ -19,18 +21,14 @@ var gem_pool: Array = []
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_meta_progress()
+	_setup_char_registry()
 	_connect_event_bus()
 	_setup_camera()
 	_setup_background()
-	_setup_player()
-	_setup_wave_manager()
-	_setup_sound_manager()
-	_setup_hud()
 	_setup_result_screen()
-	# 注册初始技能和被动（演示用）
-	_register_demo_content()
-	# 启动波次
-	wave_manager.start(player)
+	_setup_sound_manager()
+	# 先弹角色选择，选完再初始化玩家/波次/HUD
+	_show_char_select()
 
 # ────────────────────────────────────────
 # 事件总线连接
@@ -92,6 +90,11 @@ func _setup_player() -> void:
 	player.set_script(load("res://scripts/player/Player.gd"))
 	player.name = "Player"
 	player.position = Vector2(0, 0)
+	# 传入选中的角色数据
+	if char_registry:
+		var char_data = char_registry.get_character(char_registry.selected_id)
+		if char_data:
+			player.set_meta("char_data", char_data)
 	add_child(player)
 
 # ────────────────────────────────────────
@@ -133,6 +136,34 @@ func _setup_result_screen() -> void:
 	unlock_screen.name = "UnlockScreen"
 	unlock_screen.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(unlock_screen)
+
+func _setup_char_registry() -> void:
+	char_registry = Node.new()
+	char_registry.set_script(load("res://scripts/player/CharacterRegistry.gd"))
+	char_registry.name = "CharacterRegistry"
+	add_child(char_registry)
+
+func _show_char_select() -> void:
+	char_select_screen = CanvasLayer.new()
+	char_select_screen.set_script(load("res://scripts/ui/CharacterSelectScreen.gd"))
+	char_select_screen.name = "CharacterSelectScreen"
+	char_select_screen.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(char_select_screen)
+	await get_tree().process_frame
+	char_select_screen.show_screen(char_registry, meta_progress)
+	char_select_screen.character_selected.connect(_on_character_selected)
+
+func _on_character_selected(char_id: String) -> void:
+	char_registry.selected_id = char_id
+	char_select_screen.queue_free()
+	_start_game()
+
+func _start_game() -> void:
+	_setup_player()
+	_setup_wave_manager()
+	_setup_hud()
+	_register_demo_content()
+	wave_manager.start(player)
 
 func _setup_hud() -> void:
 	hud_layer = CanvasLayer.new()
@@ -339,16 +370,40 @@ func _register_demo_content() -> void:
 	holywave_data.level_up_damage = 8.0
 	UpgradeSystem.available_skills.append(holywave_data)
 
-	# ── 给玩家装备初始技能（火焰术）──
-	var skill_node = Node2D.new()
-	skill_node.set_script(load("res://scripts/skills/SkillFireball.gd"))
-	skill_node.name = "SkillFireball"
-	var sd = SkillData.new()
-	sd.id = "fireball"; sd.display_name = "🔥 火焰术"; sd.cooldown = 0.6
-	sd.damage = 25.0; sd.max_level = 5; sd.level_up_damage = 15.0
-	sd.evolve_passive_id = "power_ring"; sd.evolved_skill_id = "fireball_evolved"
-	skill_node.data = sd
-	player.add_skill(skill_node)
+	# ── 给玩家装备初始技能（根据角色选择）──
+	var char_data = player.get_meta("char_data", null)
+	var start_ids: Array = ["fireball"]  # 默认
+	if char_data and char_data.start_skill_ids.size() > 0:
+		start_ids = char_data.start_skill_ids
+
+	# 技能ID → 脚本路径映射
+	var skill_script_map := {
+		"fireball":  "res://scripts/skills/SkillFireball.gd",
+		"lightning": "res://scripts/skills/SkillLightning.gd",
+		"ice_blade": "res://scripts/skills/SkillIceBlade.gd",
+		"iceblade":  "res://scripts/skills/SkillIceBlade.gd",
+		"orbital":   "res://scripts/skills/SkillOrbital.gd",
+		"holywave":  "res://scripts/skills/SkillHolyWave.gd",
+		"frostzone": "res://scripts/skills/SkillFrostZone.gd",
+		"runeblast": "res://scripts/skills/SkillRuneBlast.gd",
+	}
+
+	for sid in start_ids:
+		# 从已注册技能里找数据
+		var found_data: SkillData = null
+		for sd_item in UpgradeSystem.available_skills:
+			if sd_item.id == sid:
+				found_data = sd_item; break
+		if found_data == null: continue
+
+		var script_path = skill_script_map.get(sid, "")
+		if script_path == "": continue
+
+		var skill_node = Node2D.new()
+		skill_node.set_script(load(script_path))
+		skill_node.name = "Skill_" + sid
+		skill_node.data = found_data
+		player.add_skill(skill_node)
 
 # ────────────────────────────────────────
 # 经验宝石生成
