@@ -1,5 +1,5 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1774790799
+::res://::1774790956
 PROJECT_STRUCTURE.md::TextFile::-1::1774172746::0::1::::<><><>0<>0<><>::
 TODO.csv::Translation::7400261657841705007::1774787873::1774790682::1::::<><><>0<>0<>7559f53d019427241ac0d3315aa46b49<>res://TODO.分类.translation<*>res://TODO.任务.translation<*>res://TODO.状态.translation<*>res://TODO.备注.translation::
 TODO.任务.translation::OptimizedTranslation::6320868938897095926::1774790682::0::1::::<><><>0<>0<><>::
@@ -8,10 +8,11 @@ TODO.备注.translation::OptimizedTranslation::2257361829579396544::1774790682::
 TODO.状态.translation::OptimizedTranslation::8698566849933733779::1774790682::0::1::::<><><>0<>0<><>::
 ::res://assets/::1774790594
 ::res://assets/audio/::1774790594
-::res://assets/audio/bgm/::1774790784
+::res://assets/audio/bgm/::1774790942
 bgm_battle.mp3::AudioStreamMP3::2843601402355749991::1774790554::1774790800::1::::<><><>0<>0<>a5bb6b48365904057763b6dea3a1f2b3<>res://.godot/imported/bgm_battle.mp3-f89766207bfc4d9f159e6ab9fe8cbde2.mp3str::
 bgm_battle_alt.mp3::AudioStreamMP3::1232401262998559162::1774790554::1774790682::1::::<><><>0<>0<>a394ee8222678bc7a3be8706694b2555<>res://.godot/imported/bgm_battle_alt.mp3-d71ef4baf1f4e00cb2de6eec998a792e.mp3str::
-bgm_boss.mp3::AudioStreamMP3::3939109058313871828::1774790768::1774790800::1::::<><><>0<>0<>f27e238785cd14f6542bf1be889eb2e6<>res://.godot/imported/bgm_boss.mp3-eec6f2d3f8f5c482d62d8e3b4410f7b1.mp3str::
+bgm_boss.mp3::AudioStreamMP3::3939109058313871828::1774790768::1774790957::1::::<><><>0<>0<>43a652360411a0d0750a27839c61a615<>res://.godot/imported/bgm_boss.mp3-eec6f2d3f8f5c482d62d8e3b4410f7b1.mp3str::
+bgm_menu.mp3::AudioStreamMP3::6472529988717313541::1774790934::1774790957::1::::<><><>0<>0<>0f14b236bb10ce3e3e2748a2fa771a93<>res://.godot/imported/bgm_menu.mp3-60510a029548fc7004450eddc7bb912f.mp3str::
 ::res://assets/music/::1774172556
 ::res://assets/sfx/::1774181979
 enemy_die.wav::AudioStreamWAV::9074068347418630214::1774181700::1774181979::1::::<><><>0<>0<>d10b3936b77deb650eae5666e7fd1ee4<>res://.godot/imported/enemy_die.wav-2937c3f3a0ce399aae334f1d0fc8ac6b.sample::
@@ -543,10 +544,10 @@ Main.gd::GDScript::757659570647093984::1774789648::0::1::::<>Node2D<><>0<>0<><>:
 MetaProgress.gd::GDScript::8172371653970587498::1774786853::0::1::::<>Node<><>0<>0<><>::
 PassiveData.gd::GDScript::6921030082026674419::1774172642::0::1::::PassiveData<>Resource<><>0<>0<><>::
 ScreenShake.gd::GDScript::6197542601900394391::1774179271::0::1::::<>Node<><>0<>0<><>::
-SoundManager.gd::GDScript::4599103550115611124::1774790621::0::1::::<>Node<><>0<>0<><>::
+SoundManager.gd::GDScript::4599103550115611124::1774790816::0::1::::<>Node<><>0<>0<><>::
 TileMapBackground.gd::GDScript::833766970870241714::1774789453::0::1::::<>Node2D<><>0<>0<><>::
 UpgradeSystem.gd::GDScript::5690231238874850148::1774177458::0::1::::<>Node<><>0<>0<><>::
-WaveManager.gd::GDScript::6098256210723875457::1774184673::0::1::::WaveManager<>Node<><>0<>0<><>::
+WaveManager.gd::GDScript::6098256210723875457::1774790835::0::1::::WaveManager<>Node<><>0<>0<><>::
 World.gd::GDScript::7282794165174922247::1774286047::0::1::::<>Node2D<><>0<>0<><>::
 ::res://scripts/ui/::1774790681
 CharacterSelectScreen.gd::GDScript::2064456687688142823::1774787777::0::1::::<>CanvasLayer<><>0<>0<><>::

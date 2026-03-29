@@ -18,6 +18,9 @@ func show_screen(registry: Node, meta: Node) -> void:
 	_selected_id = registry.selected_id
 	visible = true
 	_build_ui()
+	# 播放菜单BGM
+	var sm = get_tree().get_first_node_in_group("sound_manager")
+	if sm and sm.has_method("play_bgm_menu"): sm.play_bgm_menu()
 
 func _build_ui() -> void:
 	for c in get_children(): c.queue_free()
@@ -69,6 +72,9 @@ func _build_ui() -> void:
 	start_btn.pressed.connect(func():
 		_registry.selected_id = _selected_id
 		visible = false
+		# 切换到战斗BGM
+		var sm = get_tree().get_first_node_in_group("sound_manager")
+		if sm and sm.has_method("play_bgm_battle"): sm.play_bgm_battle()
 		emit_signal("character_selected", _selected_id)
 	)
 	add_child(start_btn)
