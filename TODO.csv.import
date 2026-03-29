@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://ddo0h06u0egmp"
+
+[deps]
+
+files=["res://TODO.分类.translation", "res://TODO.任务.translation", "res://TODO.状态.translation", "res://TODO.备注.translation"]
+
+source_file="res://TODO.csv"
+dest_files=["res://TODO.分类.translation", "res://TODO.任务.translation", "res://TODO.状态.translation", "res://TODO.备注.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
