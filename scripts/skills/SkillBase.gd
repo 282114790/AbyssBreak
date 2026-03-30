@@ -42,6 +42,25 @@ func on_level_up() -> void:
 func get_current_damage() -> float:
 	return data.damage + data.level_up_damage * (level - 1)
 
+# 计算实际伤害（含暴击判断），返回 [final_dmg, is_crit]
+func calc_damage(base_dmg: float = -1.0) -> Array:
+	var dmg = base_dmg if base_dmg >= 0.0 else get_current_damage()
+	if owner_player:
+		dmg *= owner_player.damage_multiplier
+	var crit_chance = owner_player.crit_chance if owner_player else 0.05
+	var crit_mult   = owner_player.crit_mult   if owner_player else 1.5
+	var is_crit = randf() < crit_chance
+	if is_crit:
+		dmg *= crit_mult
+	return [dmg, is_crit]
+
+# 对单个敌人造成伤害（自动含暴击）
+func deal_damage(enemy: Node, base_dmg: float = -1.0) -> void:
+	if not is_instance_valid(enemy):
+		return
+	var result = calc_damage(base_dmg)
+	enemy.take_damage(result[0], result[1])
+
 func can_evolve(passive_ids: Array) -> bool:
 	return data.evolve_passive_id != "" and data.evolve_passive_id in passive_ids
 

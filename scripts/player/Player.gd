@@ -29,12 +29,29 @@ var skills: Array = []           # 已装备的技能实例
 var max_skill_slots: int = 6
 var passive_ids: Array = []      # 已拥有的被动id列表
 
+# 遗物系统
+var relic_ids: Array = []        # 已拥有的遗物id列表
+var crit_chance: float = 0.05    # 暴击率（默认5%）
+var crit_mult: float = 1.5       # 暴击倍率（默认1.5倍）
+
 # 内部
 var regen_timer: float = 0.0
 var is_showing_upgrade: bool = false  # 升级面板开关锁
 var pickup_timer: float = 0.0
 var is_dead: bool = false
 var visual: AnimatedSprite2D
+
+# 翻滚/闪避
+var is_dodging: bool = false         # 当前正在翻滚
+var dodge_invincible: bool = false   # 无敌帧
+var dodge_timer: float = 0.0         # 翻滚剩余时长
+var dodge_cooldown_timer: float = 0.0 # 翻滚冷却
+const DODGE_DURATION: float = 0.32   # 翻滚持续时间（秒）
+const DODGE_SPEED: float = 520.0     # 翻滚速度
+const DODGE_COOLDOWN: float = 0.7    # 翻滚冷却（秒）
+const DODGE_INVINCIBLE_DURATION: float = 0.25  # 无敌帧时长
+var _dodge_dir: Vector2 = Vector2.RIGHT
+var _afterimage_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -145,10 +162,87 @@ func _setup_visual() -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
+	_handle_dodge(delta)
 	_handle_movement(delta)
 	_handle_regen(delta)
 	_handle_pickup(delta)
 	move_and_slide()
+
+func _handle_dodge(delta: float) -> void:
+	# 冷却计时
+	if dodge_cooldown_timer > 0.0:
+		dodge_cooldown_timer -= delta
+
+	# 翻滚进行中
+	if is_dodging:
+		dodge_timer -= delta
+		_afterimage_timer -= delta
+		# 生成残影
+		if _afterimage_timer <= 0.0:
+			_afterimage_timer = 0.05
+			_spawn_afterimage()
+		if dodge_timer <= 0.0:
+			_end_dodge()
+		else:
+			velocity = _dodge_dir * DODGE_SPEED
+		return
+
+	# 检测翻滚输入（Space）
+	if Input.is_action_just_pressed("ui_accept") and dodge_cooldown_timer <= 0.0:
+		_start_dodge()
+
+func _start_dodge() -> void:
+	# 翻滚方向 = 当前移动方向，无输入则背向（保留上一个移动方向）
+	var dir = Vector2.ZERO
+	if Input.is_action_pressed("move_up"):    dir.y -= 1
+	if Input.is_action_pressed("move_down"):  dir.y += 1
+	if Input.is_action_pressed("move_left"):  dir.x -= 1
+	if Input.is_action_pressed("move_right"): dir.x += 1
+	if dir == Vector2.ZERO:
+		dir = Vector2.DOWN  # 默认向下翻滚
+	_dodge_dir = dir.normalized()
+
+	is_dodging = true
+	dodge_invincible = true
+	dodge_timer = DODGE_DURATION
+	_afterimage_timer = 0.0
+	dodge_cooldown_timer = DODGE_COOLDOWN
+
+	# 视觉：半透明表示无敌
+	if visual:
+		visual.modulate = Color(1.0, 1.0, 1.0, 0.45)
+
+	# 无敌帧在翻滚前期结束（比翻滚动作早一点）
+	get_tree().create_timer(DODGE_INVINCIBLE_DURATION).timeout.connect(func():
+		dodge_invincible = false
+	)
+
+func _end_dodge() -> void:
+	is_dodging = false
+	dodge_invincible = false
+	if visual:
+		visual.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
+func _spawn_afterimage() -> void:
+	if visual == null:
+		return
+	# 用 Sprite2D 复制当前帧作为残影
+	var ghost = Sprite2D.new()
+	var sf = visual.sprite_frames
+	var anim = visual.animation
+	var frame_idx = visual.frame
+	if sf and sf.has_animation(anim) and frame_idx < sf.get_frame_count(anim):
+		ghost.texture = sf.get_frame_texture(anim, frame_idx)
+	ghost.scale = visual.scale
+	ghost.flip_h = visual.flip_h
+	ghost.position = global_position
+	ghost.modulate = Color(0.4, 0.7, 1.0, 0.55)  # 蓝白残影
+	ghost.z_index = -1
+	get_tree().current_scene.add_child(ghost)
+	# 0.15s 淡出后清理
+	var tween = ghost.create_tween()
+	tween.tween_property(ghost, "modulate:a", 0.0, 0.15)
+	tween.tween_callback(ghost.queue_free)
 
 func _handle_movement(delta: float) -> void:
 	var dir = Vector2.ZERO
@@ -188,6 +282,9 @@ func _handle_pickup(delta: float) -> void:
 
 func take_damage(dmg: float) -> void:
 	if is_dead:
+		return
+	# 无敌帧期间免伤
+	if dodge_invincible:
 		return
 	current_hp -= dmg
 	current_hp = max(current_hp, 0.0)

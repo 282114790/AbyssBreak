@@ -185,7 +185,7 @@ func _try_attack() -> void:
 		attack_timer = data.attack_cooldown
 		player.take_damage(data.damage)
 
-func take_damage(dmg: float) -> void:
+func take_damage(dmg: float, is_crit: bool = false) -> void:
 	if is_dead:
 		return
 	hp -= dmg
@@ -208,7 +208,7 @@ func take_damage(dmg: float) -> void:
 	dn.set_script(load("res://scripts/systems/DamageNumber.gd"))
 	get_tree().current_scene.add_child(dn)
 	dn.global_position = global_position + Vector2(randf_range(-15, 15), -20)
-	dn.setup(dmg)
+	dn.setup(dmg, is_crit)
 	if hp <= 0:
 		die()
 

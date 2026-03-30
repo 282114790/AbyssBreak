@@ -12,6 +12,7 @@ var pierce_count: int = 1
 var hit_enemies: Array = []
 var is_homing: bool = true   # 是否追踪目标
 var lifetime: float = 5.0
+var owner_skill: SkillBase = null  # 用于暴击计算
 
 # 拖尾
 var trail: Line2D
@@ -70,7 +71,14 @@ func _on_hit(body: Node2D) -> void:
 	if body in hit_enemies:
 		return
 	hit_enemies.append(body)
-	body.take_damage(damage)
+	# 暴击判断
+	var is_crit = false
+	var final_dmg = damage
+	if owner_skill and is_instance_valid(owner_skill):
+		var result = owner_skill.calc_damage(damage)
+		final_dmg = result[0]
+		is_crit = result[1]
+	body.take_damage(final_dmg, is_crit)
 	# 命中特效
 	_spawn_hit_effect()
 	pierce_count -= 1

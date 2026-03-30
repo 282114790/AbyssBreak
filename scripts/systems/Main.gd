@@ -53,6 +53,8 @@ func _connect_event_bus() -> void:
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
 	EventBus.show_level_up_panel.connect(_on_show_level_up)
 	EventBus.player_damaged.connect(_on_player_damaged)
+	EventBus.wave_changed.connect(_on_wave_changed_relic)
+	EventBus.relic_drop_touched.connect(_on_relic_drop_touched)
 
 # ────────────────────────────────────────
 # 摄像机
@@ -927,3 +929,42 @@ func _input(event: InputEvent) -> void:
 		if game_over_flag or (is_instance_valid(player) and player.is_dead):
 			get_tree().paused = false
 			get_tree().reload_current_scene()
+
+# ────────────────────────────────────────
+# 遗物系统
+# ────────────────────────────────────────
+var _last_relic_wave: int = 0   # 上次掉落遗物的波次
+
+func _on_wave_changed_relic(wave: int) -> void:
+	# 每隔3波掉落一次遗物（波次1不触发，避免开局即掉）
+	if wave <= 1:
+		return
+	if wave - _last_relic_wave >= 3:
+		_last_relic_wave = wave
+		_drop_relic_near_player()
+
+func _drop_relic_near_player() -> void:
+	if not is_instance_valid(player):
+		return
+	var owned = player.get("relic_ids") if player.get("relic_ids") != null else []
+	var choices = RelicRegistry.get_random_choices(3, owned)
+	if choices.is_empty():
+		return
+	var drop = Area2D.new()
+	drop.set_script(load("res://scripts/systems/RelicDrop.gd"))
+	add_child(drop)
+	# 掉落在玩家右侧100px，避免直接踩上
+	drop.global_position = player.global_position + Vector2(randf_range(80, 140), randf_range(-60, 60))
+	drop.setup(choices)
+
+func _on_relic_drop_touched(choices: Array) -> void:
+	if not is_instance_valid(player):
+		return
+	# 暂停游戏，显示遗物选择面板
+	EventBus.game_logic_paused = true
+	get_tree().paused = true
+	var panel = CanvasLayer.new()
+	panel.set_script(load("res://scripts/systems/RelicSelectPanel.gd"))
+	panel.layer = 20  # 最顶层
+	add_child(panel)
+	panel.setup(choices, player)

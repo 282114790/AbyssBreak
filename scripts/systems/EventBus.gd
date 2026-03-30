@@ -41,3 +41,7 @@ signal upgrade_chosen(choice: Dictionary)
 signal gem_collected(amount: int)
 signal skill_activated(skill_id: String)
 signal damage_dealt(position: Vector2, amount: int, color: Color)
+
+# 遗物系统
+signal relic_drop_touched(choices: Array)
+signal relic_collected(relic_id: String)

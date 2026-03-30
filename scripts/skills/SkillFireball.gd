@@ -104,3 +104,4 @@ func _spawn_projectile_dir(dir: Vector2) -> void:
 	trail.rotation_degrees = angle_deg
 
 	proj.setup_dir(get_current_damage(), dir, data.speed if data else 350.0, data.pierce_count if data else 1)
+	proj.owner_skill = self
