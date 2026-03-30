@@ -98,6 +98,15 @@ func _on_level_up(new_level: int) -> void:
 		level_label.text = "Lv." + str(new_level)
 
 func _on_wave_changed(wave: int) -> void:
+	if wave == -1:
+		# 精英波通知
+		if wave_label:
+			wave_label.text = "⚠ 精英波 ⚠"
+			wave_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.0))
+		_show_elite_alert()
+		return
+	if wave_label:
+		wave_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 	if wave_label and game_manager:
 		var wm = game_manager.get("wave_manager")
 		if wm:
@@ -105,6 +114,23 @@ func _on_wave_changed(wave: int) -> void:
 			wave_label.text = "Wave %d / %d" % [wave, total]
 		else:
 			wave_label.text = "Wave %d" % wave
+
+func _show_elite_alert() -> void:
+	# 屏幕中央弹出精英警告文字，1.5秒后淡出
+	var alert = Label.new()
+	alert.text = "⚠  精英敌人来袭！  ⚠"
+	alert.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	alert.add_theme_font_size_override("font_size", 32)
+	alert.add_theme_color_override("font_color", Color(1.0, 0.6, 0.0))
+	alert.anchor_left   = 0.5; alert.anchor_right  = 0.5
+	alert.anchor_top    = 0.35; alert.anchor_bottom = 0.35
+	alert.offset_left = -300; alert.offset_right = 300
+	alert.offset_top  = -30;  alert.offset_bottom = 30
+	add_child(alert)
+	var tween = alert.create_tween()
+	tween.tween_interval(1.0)
+	tween.tween_property(alert, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(alert.queue_free)
 
 # ── 升级面板 ──────────────────────────────────────────────────────────────────
 func _show_upgrade_panel(choices: Array) -> void:
