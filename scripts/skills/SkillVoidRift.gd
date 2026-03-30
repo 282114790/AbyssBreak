@@ -1,3 +1,4 @@
+@tool
 # SkillVoidRift.gd
 # 虚空裂缝：在随机位置生成黑洞，吸引并持续伤害敌人
 extends SkillBase
@@ -15,7 +16,7 @@ func activate() -> void:
 	_spawn_rift()
 
 func _spawn_rift() -> void:
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var count = 1 + lv / 3  # Lv3=2个, Lv5=2个
 
 	for i in range(count):
@@ -25,10 +26,10 @@ func _spawn_rift() -> void:
 		_create_rift_at(pos)
 
 func _create_rift_at(pos: Vector2) -> void:
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var rift = Node2D.new()
 	rift.global_position = pos
-	get_tree().current_scene.add_child(rift)
+	_get_spawn_root().add_child(rift)
 
 	# 视觉：黑洞圆圈 + 旋转环
 	for ring in range(3):
@@ -86,7 +87,7 @@ func _run_rift_logic(rift: Node2D, duration: float, dmg: float) -> void:
 		# 吸引+伤害
 		if tick >= 0.3:
 			tick = 0.0
-			for enemy in get_tree().get_nodes_in_group("enemies"):
+			for enemy in _get_enemies():
 				if not is_instance_valid(enemy): continue
 				var dist = enemy.global_position.distance_to(rift.global_position)
 				if dist < RIFT_RADIUS:

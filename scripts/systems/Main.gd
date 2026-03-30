@@ -895,7 +895,7 @@ func _update_skill_bar() -> void:
 				slot.add_child(icon_rect)
 
 			var lv_lbl = Label.new()
-			lv_lbl.text = "Lv%d" % (skill.data.level if skill.data else 1)
+			lv_lbl.text = "Lv%d" % (skill.level if skill else 1)
 			lv_lbl.add_theme_font_size_override("font_size", 9)
 			lv_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.3))
 			lv_lbl.set_anchors_preset(Control.PRESET_TOP_RIGHT)

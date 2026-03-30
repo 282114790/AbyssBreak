@@ -140,7 +140,7 @@ func _on_player_died() -> void:
 	var main = get_tree().root.find_child("Main", true, false)
 	if main and main.get("current_difficulty") != null:
 		var diff = main.current_difficulty
-		if diff and diff.get("id", "") == "abyss":
+		if diff and diff.id == "abyss":
 			_try_unlock("abyss_mode")
 	# no_passive_run: 不拾取被动完成
 	if session_passives == 0:

@@ -1,3 +1,4 @@
+@tool
 # SkillFireball.gd
 # 火焰术 - 多弹散射，发射数量随等级增加
 extends SkillBase
@@ -96,7 +97,7 @@ func _spawn_projectile_dir(dir: Vector2) -> void:
 	proj.add_child(trail)
 	proj.move_child(trail, 0)
 
-	get_tree().current_scene.add_child(proj)
+	_get_spawn_root().add_child(proj)
 	proj.global_position = owner_player.global_position
 
 	var angle_deg = rad_to_deg(dir.angle()) + 180.0

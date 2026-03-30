@@ -1,3 +1,4 @@
+@tool
 # SkillMeteorShower.gd
 # 陨石雨：从天而降多颗陨石砸向敌人密集区域
 extends SkillBase
@@ -11,7 +12,7 @@ func activate() -> void:
 	_start_shower()
 
 func _start_shower() -> void:
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var count = 4 + lv * 2  # Lv1=6颗, Lv5=14颗
 	var interval = 0.15
 
@@ -22,11 +23,11 @@ func _start_shower() -> void:
 
 func _drop_meteor() -> void:
 	if not owner_player: return
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 
 	# 选目标：随机敌人附近，或随机位置
 	var target_pos = owner_player.global_position
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	var alive = enemies.filter(func(e): return is_instance_valid(e))
 	if alive.size() > 0:
 		var picked = alive[randi() % alive.size()]
@@ -37,7 +38,7 @@ func _drop_meteor() -> void:
 	var meteor = Node2D.new()
 	var start_pos = target_pos + Vector2(randf_range(-30, 30), -300)
 	meteor.global_position = start_pos
-	get_tree().current_scene.add_child(meteor)
+	_get_spawn_root().add_child(meteor)
 
 	# 视觉：橙红色方块+尾迹
 	var body = ColorRect.new()
@@ -75,7 +76,7 @@ func _explode_at(pos: Vector2, radius: float, dmg: float) -> void:
 	# 爆炸特效
 	var boom = Node2D.new()
 	boom.global_position = pos
-	get_tree().current_scene.add_child(boom)
+	_get_spawn_root().add_child(boom)
 	var flash = ColorRect.new()
 	flash.size = Vector2(radius * 2, radius * 2)
 	flash.position = Vector2(-radius, -radius)
@@ -83,7 +84,7 @@ func _explode_at(pos: Vector2, radius: float, dmg: float) -> void:
 	boom.add_child(flash)
 
 	# 伤害
-	for enemy in get_tree().get_nodes_in_group("enemies"):
+	for enemy in _get_enemies():
 		if not is_instance_valid(enemy): continue
 		if enemy.global_position.distance_to(pos) <= radius:
 			if enemy.has_method("take_damage"):

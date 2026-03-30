@@ -1,3 +1,4 @@
+@tool
 # SkillBloodNova.gd
 # 血月新星：消耗少量HP，释放全方向血色冲击波
 extends SkillBase
@@ -12,7 +13,7 @@ func activate() -> void:
 	_spend_hp_and_blast()
 
 func _spend_hp_and_blast() -> void:
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	# 消耗HP
 	var cost = owner_player.hp * HP_COST_RATIO
 	cost = max(cost, 1.0)
@@ -21,7 +22,7 @@ func _spend_hp_and_blast() -> void:
 	# 爆发圆圈
 	var nova = Node2D.new()
 	nova.global_position = owner_player.global_position
-	get_tree().current_scene.add_child(nova)
+	_get_spawn_root().add_child(nova)
 
 	# 径向射线视觉
 	var ray_count = 16 + lv * 2
@@ -45,7 +46,7 @@ func _spend_hp_and_blast() -> void:
 	var radius = 120.0 + lv * 20.0
 	var dmg = get_current_damage() * (1.0 + cost / 10.0)  # HP消耗越高伤害越大
 
-	for enemy in get_tree().get_nodes_in_group("enemies"):
+	for enemy in _get_enemies():
 		if not is_instance_valid(enemy): continue
 		if enemy.global_position.distance_to(owner_player.global_position) <= radius:
 			if enemy.has_method("take_damage"):

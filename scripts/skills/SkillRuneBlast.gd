@@ -1,3 +1,4 @@
+@tool
 # SkillRuneBlast.gd
 # 爆裂符文 - 在随机敌人脚下放置旋转符文，1.5秒后大爆炸
 extends SkillBase
@@ -6,7 +7,7 @@ class_name SkillRuneBlast
 var explosion_radius: float = 100.0
 
 func activate() -> void:
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
 	var target = enemies[randi() % enemies.size()]
@@ -17,7 +18,7 @@ func activate() -> void:
 func _spawn_rune(pos: Vector2) -> void:
 	var rune_node = Node2D.new()
 	rune_node.global_position = pos
-	get_tree().current_scene.add_child(rune_node)
+	_get_spawn_root().add_child(rune_node)
 
 	# 创建显眼符文视觉
 	var rune_visual = _create_rune_visual()
@@ -73,7 +74,7 @@ func _explode(rune_node: Node2D) -> void:
 	var dmg = rune_node.get_meta("damage")
 
 	# 爆炸伤害范围内所有敌人
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	for enemy in enemies:
 		if not is_instance_valid(enemy):
 			continue
@@ -102,7 +103,7 @@ func _spawn_explosion_visual(pos: Vector2) -> void:
 		circle.polygon = pts
 		circle.global_position = pos
 		circle.z_index = 10
-		get_tree().current_scene.add_child(circle)
+		_get_spawn_root().add_child(circle)
 		var target_scale = Vector2(4.0 + ring * 2.0, 4.0 + ring * 2.0)
 		var delay = ring * 0.06
 		var tween = circle.create_tween()

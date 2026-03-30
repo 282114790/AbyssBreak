@@ -1,3 +1,4 @@
+@tool
 # SkillPoisonCloud.gd
 # 毒雾领域：在玩家周围释放持续毒雾，范围内敌人持续中毒
 extends SkillBase
@@ -62,7 +63,7 @@ func _do_poison_tick() -> void:
 	var radius = CLOUD_RADIUS_BASE + lv * 15.0
 	var dmg = get_current_damage() * 0.3
 
-	for enemy in get_tree().get_nodes_in_group("enemies"):
+	for enemy in _get_enemies():
 		if not is_instance_valid(enemy): continue
 		if enemy.global_position.distance_to(owner_player.global_position) <= radius:
 			if enemy.has_method("take_damage"):
@@ -71,4 +72,4 @@ func _do_poison_tick() -> void:
 				EventBus.damage_dealt.emit(enemy.global_position, int(dmg), Color(0.2, 0.9, 0.1))
 
 func _get_level() -> int:
-	return data.level if data else 1
+	return level if data else 1

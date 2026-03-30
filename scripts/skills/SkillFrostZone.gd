@@ -1,3 +1,4 @@
+@tool
 # SkillFrostZone.gd
 # 寒冰领域 - 玩家脚下的持续冰冻区域，减速并持续伤害 + 冰晶粒子特效
 extends SkillBase
@@ -61,7 +62,7 @@ func _create_zone() -> void:
 	if owner_player != null:
 		owner_player.add_child(zone)
 	else:
-		get_tree().current_scene.add_child(zone)
+		_get_spawn_root().add_child(zone)
 
 func _get_radius() -> float:
 	if data != null:
@@ -116,7 +117,7 @@ func _spawn_crystal() -> void:
 	crystal.polygon = pts
 	crystal.global_position = spawn_pos
 	crystal.z_index = 5
-	get_tree().current_scene.add_child(crystal)
+	_get_spawn_root().add_child(crystal)
 
 	var tween = crystal.create_tween()
 	tween.set_parallel(true)

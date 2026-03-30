@@ -107,6 +107,7 @@ func _setup_visual() -> void:
 		var atlas = AtlasTexture.new()
 		atlas.atlas = tex
 		atlas.region = Rect2(i * frame_w, 0, frame_w, frame_h)
+		atlas.margin = Rect2(2, 2, -4, -4)  # 内缩2px，防止相邻帧渗透进描边shader
 		frames.add_frame("walk", atlas)
 
 	frames.add_animation("idle")
@@ -115,12 +116,24 @@ func _setup_visual() -> void:
 	var idle_atlas = AtlasTexture.new()
 	idle_atlas.atlas = tex
 	idle_atlas.region = Rect2(0, 0, frame_w, frame_h)
+	idle_atlas.margin = Rect2(2, 2, -4, -4)
 	frames.add_frame("idle", idle_atlas)
 
 	anim_sprite.sprite_frames = frames
 	add_child(anim_sprite)
 	visual = anim_sprite
 	visual.play("idle")
+
+	# 描边轮廓 shader
+	var shader_mat = ShaderMaterial.new()
+	var outline_shader = load("res://assets/shaders/character_outline.gdshader")
+	if outline_shader:
+		shader_mat.shader = outline_shader
+		shader_mat.set_shader_parameter("outline_color", Color(1.0, 0.85, 0.1, 1.0))  # 金黄色
+		shader_mat.set_shader_parameter("outline_width", 2.5)  # 稍粗一点更明显
+		shader_mat.set_shader_parameter("shadow_color", Color(0.0, 0.0, 0.0, 0.45))
+		shader_mat.set_shader_parameter("shadow_offset", Vector2(2.0, 3.0))
+		visual.material = shader_mat
 
 	var col = CollisionShape2D.new()
 	var cap = CapsuleShape2D.new()

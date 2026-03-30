@@ -1,3 +1,4 @@
+@tool
 # SkillTimeSlow.gd
 # 时间减速：短暂减慢所有敌人速度80%，持续时间随等级增加
 extends SkillBase
@@ -14,14 +15,14 @@ func activate() -> void:
 
 func _do_slow() -> void:
 	_active = true
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var duration = 2.0 + lv * 0.5  # Lv1=2.5s, Lv5=4.5s
 
 	# 视觉：蓝紫色全屏闪光
 	_show_slow_vfx(duration)
 
 	# 减速所有敌人
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	var original_speeds := {}
 	for enemy in enemies:
 		if not is_instance_valid(enemy): continue
@@ -51,7 +52,7 @@ func _show_slow_vfx(duration: float) -> void:
 	var vfx = Node2D.new()
 	vfx.global_position = owner_player.global_position
 	vfx.z_index = 5
-	get_tree().current_scene.add_child(vfx)
+	_get_spawn_root().add_child(vfx)
 
 	# 时钟慢指针效果：辐射状蓝色光线
 	for i in range(8):

@@ -1,3 +1,4 @@
+@tool
 # SkillHolyWave.gd
 # 圣光波：神圣光环从玩家向外爆发扩散，GPUParticles2D 实现
 extends SkillBase
@@ -52,7 +53,7 @@ func _spawn_holy_burst() -> void:
 	pm.color_ramp = gt
 	burst.process_material = pm
 	burst.texture = _make_circle_texture(16)  # 圆形粒子
-	get_tree().current_scene.add_child(burst)
+	_get_spawn_root().add_child(burst)
 	burst.global_position = owner_player.global_position
 	burst.emitting = true
 
@@ -81,7 +82,7 @@ func _spawn_holy_burst() -> void:
 	pm2.color_ramp = gt2
 	dust.process_material = pm2
 	dust.texture = _make_circle_texture(12)  # 圆形粒子（稍小）
-	get_tree().current_scene.add_child(dust)
+	_get_spawn_root().add_child(dust)
 	dust.global_position = owner_player.global_position
 	dust.emitting = true
 
@@ -145,7 +146,7 @@ func _spawn_ring_wave() -> void:
 	col.shape = circle
 	ring.add_child(col)
 
-	get_tree().current_scene.add_child(ring)
+	_get_spawn_root().add_child(ring)
 
 	# 伤害
 	var dmg = get_current_damage()
@@ -180,7 +181,7 @@ func _spawn_ring_wave() -> void:
 			var a2 = (TAU / 64.0) * i
 			echo_line.add_point(Vector2(cos(a2) * 28, sin(a2) * 28))
 		echo.add_child(echo_line)
-		get_tree().current_scene.add_child(echo)
+		_get_spawn_root().add_child(echo)
 		var echo_tween = echo.create_tween()
 		echo_tween.set_parallel(true)
 		echo_tween.tween_property(echo, "scale", Vector2(max_scale * 0.75, max_scale * 0.75), duration * 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

@@ -43,6 +43,7 @@ func _ready() -> void:
 		_sktex = load("res://assets/ui/skill_icons.png")
 	if ResourceLoader.exists("res://assets/ui/passive_icons.png"):
 		_pstex = load("res://assets/ui/passive_icons.png")
+	_setup_debug_hud()
 
 func _process(_delta: float) -> void:
 	if game_manager and timer_label:
@@ -57,12 +58,14 @@ func _process(_delta: float) -> void:
 			else:
 				wave_label.text = "Wave %d / %d" % [wm.current_wave, total_waves]
 	_update_difficulty_badge()
+	_update_debug_hud()
 
 func _update_difficulty_badge() -> void:
 	if not difficulty_badge or not game_manager: return
 	var diff = game_manager.get("current_difficulty")
 	if diff == null: return
-	var diff_id: String = str(diff.get("id")) if diff.get("id") != null else ""
+	# DifficultyData 是 Resource，直接读属性 .id
+	var diff_id: String = diff.id if diff is Resource else str(diff.get("id", ""))
 	match diff_id:
 		"normal":
 			difficulty_badge.text = "🟢 普通"
@@ -210,3 +213,38 @@ func _show_end_screen(is_victory: bool, survived_time: float, score: int) -> voi
 	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hint.position.y = 80
 	overlay.add_child(hint)
+
+# ── 调试信息 HUD（FPS + 对象数量）────────────────────────────────────────────
+var _debug_label: Label = null
+
+func _setup_debug_hud() -> void:
+	_debug_label = Label.new()
+	_debug_label.name = "DebugLabel"
+	_debug_label.add_theme_font_size_override("font_size", 13)
+	_debug_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.5))
+	# 右上角
+	_debug_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_debug_label.offset_left  = -220
+	_debug_label.offset_right = -8
+	_debug_label.offset_top   = 8
+	_debug_label.offset_bottom = 120
+	_debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(_debug_label)
+
+func _update_debug_hud() -> void:
+	if not _debug_label: return
+	var fps = Engine.get_frames_per_second()
+	var node_count = get_tree().get_node_count()
+	# 统计敌人、投射物数量
+	var enemy_count = get_tree().get_nodes_in_group("enemies").size()
+	var proj_count  = get_tree().get_nodes_in_group("player_projectiles").size()
+	_debug_label.text = "FPS: %d\nNodes: %d\nEnemies: %d\nProjectiles: %d" % [
+		fps, node_count, enemy_count, proj_count
+	]
+	# FPS 颜色警告
+	if fps < 30:
+		_debug_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
+	elif fps < 50:
+		_debug_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
+	else:
+		_debug_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.5))

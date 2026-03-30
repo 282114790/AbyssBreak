@@ -1,3 +1,4 @@
+@tool
 # SkillLightning.gd
 # 雷击链 - 锯齿闪电连线弹跳，随关卡增加弹跳数和亮度
 extends SkillBase
@@ -8,7 +9,7 @@ var bounce_radius: float = 380.0
 func activate() -> void:
 	if not owner_player:
 		return
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
 
@@ -75,7 +76,7 @@ func _draw_lightning(from: Vector2, to: Vector2) -> void:
 		var offset = perp * randf_range(-offset_scale, offset_scale)
 		main_line.add_point(base + offset)
 	main_line.add_point(to)
-	get_tree().current_scene.add_child(main_line)
+	_get_spawn_root().add_child(main_line)
 
 	# 副闪电（细一点，稍微偏移方向，增加层叠感）
 	var sub_line = Line2D.new()
@@ -90,7 +91,7 @@ func _draw_lightning(from: Vector2, to: Vector2) -> void:
 		base += perp * randf_range(-from.distance_to(to) * 0.08, from.distance_to(to) * 0.08)
 		sub_line.add_point(base)
 	sub_line.add_point(to)
-	get_tree().current_scene.add_child(sub_line)
+	_get_spawn_root().add_child(sub_line)
 
 	# 核心白光（最细，模拟闪电核心）
 	var core_line = Line2D.new()
@@ -99,7 +100,7 @@ func _draw_lightning(from: Vector2, to: Vector2) -> void:
 	core_line.z_index = 11
 	core_line.add_point(from)
 	core_line.add_point(to)
-	get_tree().current_scene.add_child(core_line)
+	_get_spawn_root().add_child(core_line)
 
 	# 保留0.3秒后渐出消失
 	for line in [main_line, sub_line, core_line]:
@@ -136,7 +137,7 @@ func _spawn_hit_flash(pos: Vector2) -> void:
 	pm.color_ramp = gt
 	spark.process_material = pm
 
-	get_tree().current_scene.add_child(spark)
+	_get_spawn_root().add_child(spark)
 	spark.global_position = pos
 	spark.emitting = true
 	get_tree().create_timer(0.5).timeout.connect(spark.queue_free)

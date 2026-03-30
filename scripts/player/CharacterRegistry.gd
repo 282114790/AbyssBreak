@@ -69,5 +69,4 @@ func get_character(id: String):
 	return null
 
 func is_unlocked(id: String, meta: Node) -> bool:
-	if id == "mage": return true
-	return meta != null and meta.unlocked.get("char_" + id, 0) > 0
+	return true  # 所有角色默认开放

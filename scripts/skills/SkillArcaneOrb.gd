@@ -1,3 +1,4 @@
+@tool
 # SkillArcaneOrb.gd
 # 奥术弹幕：发射多个旋转弹幕，绕玩家公转后向外飞出
 extends SkillBase
@@ -10,7 +11,7 @@ func activate() -> void:
 	_spawn_orbs()
 
 func _spawn_orbs() -> void:
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var count = 3 + lv  # Lv1=4, Lv5=8
 
 	for i in range(count):
@@ -18,10 +19,10 @@ func _spawn_orbs() -> void:
 		_launch_orb(angle)
 
 func _launch_orb(start_angle: float) -> void:
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var orb = Node2D.new()
 	orb.global_position = owner_player.global_position
-	get_tree().current_scene.add_child(orb)
+	_get_spawn_root().add_child(orb)
 
 	# 视觉：蓝色发光圆
 	var glow = ColorRect.new()
@@ -64,7 +65,7 @@ func _launch_orb(start_angle: float) -> void:
 			# 飞出阶段
 			orb.global_position += velocity * d
 			# 检测碰撞
-			for enemy in get_tree().get_nodes_in_group("enemies"):
+			for enemy in _get_enemies():
 				if not is_instance_valid(enemy): continue
 				if hit_enemies.has(enemy): continue
 				if orb.global_position.distance_to(enemy.global_position) < 24:

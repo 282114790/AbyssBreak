@@ -11,7 +11,7 @@ var map_theme: String = "dungeon"
 const TILE_PX    := 16
 const SCALE_F    := 4.0
 const DISPLAY    := TILE_PX * SCALE_F   # 64px
-const WORLD_HALF := 1600.0
+const WORLD_HALF := 8000.0   # 足够大，玩家基本跑不到边界
 
 const ROOM_TILES := 16
 const ROOM_SIZE  := DISPLAY * ROOM_TILES
@@ -299,7 +299,7 @@ func _draw_room_grid() -> void:
 
 # ── 世界边界 ──────────────────────────────────────────
 func _draw_world_border() -> void:
-	var half := 1500.0
+	var half := 7800.0
 	var corners := [Vector2(-half,-half), Vector2(half,-half), Vector2(half,half), Vector2(-half,half), Vector2(-half,-half)]
 	var l := Line2D.new()
 	for p in corners: l.add_point(p)

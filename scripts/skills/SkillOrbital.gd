@@ -1,3 +1,4 @@
+@tool
 # SkillOrbital.gd
 # 绕身旋转类技能（魔法护盾）— 使用 shield.png spritesheet
 extends SkillBase

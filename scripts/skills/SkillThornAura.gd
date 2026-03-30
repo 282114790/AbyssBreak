@@ -1,3 +1,4 @@
+@tool
 # SkillThornAura.gd
 # 荆棘护甲：受到伤害时反弹伤害给攻击者，周身荆棘光环
 extends SkillBase
@@ -21,7 +22,7 @@ func _setup_aura() -> void:
 
 func _on_player_hit(dmg: float, attacker: Node2D) -> void:
 	if not is_instance_valid(attacker): return
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var reflect = dmg * (REFLECT_RATIO_BASE + lv * 0.1)
 	if attacker.has_method("take_damage"):
 		attacker.take_damage(reflect)
@@ -36,7 +37,7 @@ func _spawn_aura_visual() -> void:
 	aura.z_index = 2
 	owner_player.add_child(aura)
 
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	var spike_count = 8 + lv * 2
 	for i in range(spike_count):
 		var angle = TAU * i / spike_count

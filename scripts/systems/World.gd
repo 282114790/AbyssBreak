@@ -10,7 +10,7 @@ const HUD_SCRIPT = preload("res://scripts/ui/HUD.gd")
 
 var player: Player
 var wave_manager: WaveManager
-var hud: HUD
+var hud: Node
 
 func _ready() -> void:
 	_setup_background()
@@ -24,10 +24,16 @@ func _setup_background() -> void:
 	var bg = Node2D.new()
 	bg.set_script(load("res://scripts/systems/TileMapBackground.gd"))
 	bg.name = "TileMapBackground"
+	# 根据难度切换地图主题
+	var main = get_tree().root.find_child("Main", true, false)
+	if main:
+		var diff = main.get("current_difficulty")
+		if diff is Resource:
+			match diff.id:
+				"hard":  bg.set("map_theme", "ice")
+				"abyss": bg.set("map_theme", "lava")
+				_:       bg.set("map_theme", "dungeon")
 	add_child(bg)
-		line_v.position = Vector2(i * 100, -1500)
-		line_v.z_index = -9
-		add_child(line_v)
 
 func _setup_player() -> void:
 	player = CharacterBody2D.new()

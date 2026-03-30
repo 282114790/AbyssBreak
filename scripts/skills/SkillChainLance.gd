@@ -1,3 +1,4 @@
+@tool
 # SkillChainLance.gd
 # 穿刺长枪：向最近敌人发射穿透长枪，最多穿透5个敌人
 extends SkillBase
@@ -10,9 +11,9 @@ func activate() -> void:
 	_fire_lance()
 
 func _fire_lance() -> void:
-	var lv = data.level if data else 1
+	var lv = level if data else 1
 	# 找最近敌人定方向
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	var nearest: Node2D = null
 	var min_dist := 9999.0
 	for e in enemies:
@@ -30,7 +31,7 @@ func _fire_lance() -> void:
 	var lance = Node2D.new()
 	lance.global_position = owner_player.global_position
 	lance.rotation = direction.angle()
-	get_tree().current_scene.add_child(lance)
+	_get_spawn_root().add_child(lance)
 
 	# 视觉：黄绿色细长矩形
 	var body = ColorRect.new()
@@ -58,7 +59,7 @@ func _fire_lance() -> void:
 		lance.global_position += direction * speed * d
 
 		# 碰撞检测
-		for enemy in get_tree().get_nodes_in_group("enemies"):
+		for enemy in _get_enemies():
 			if not is_instance_valid(enemy): continue
 			if hit_set.has(enemy): continue
 			if lance.global_position.distance_to(enemy.global_position) < 28:

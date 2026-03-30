@@ -1,3 +1,4 @@
+@tool
 # SkillIceBlade.gd
 # 冰刃术 - 真实雪花图形，6尖角+6短臂，随等级增加方向数
 extends SkillBase
@@ -79,7 +80,7 @@ func _spawn_snowflake(dir: Vector2) -> void:
 	center.color = Color(1.0, 1.0, 1.0, 0.9)
 	proj.add_child(center)
 
-	get_tree().current_scene.add_child(proj)
+	_get_spawn_root().add_child(proj)
 	proj.global_position = owner_player.global_position
 
 	# 雪花自旋动画
