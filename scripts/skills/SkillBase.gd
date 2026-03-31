@@ -96,7 +96,7 @@ func get_nearest_enemy() -> Node2D:
 	var enemies = _get_enemies()
 	if enemies.is_empty(): return null
 	# 优先精英
-	var elites = enemies.filter(func(e): return e.data and e.data.get("is_elite", false))
+	var elites = enemies.filter(func(e): return e.data and (e.data.get("is_elite") if e.data.get("is_elite") != null else false))
 	if not elites.is_empty():
 		elites.sort_custom(func(a,b): return global_position.distance_to(a.global_position) < global_position.distance_to(b.global_position))
 		return elites[0]
