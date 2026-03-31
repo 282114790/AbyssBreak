@@ -29,7 +29,8 @@ func _process(_delta: float) -> void:
 func _enter_berserk() -> void:
 	phase = Phase.BERSERK
 	_boss.base_move_speed *= 1.4
-	_boss.attack_interval *= 0.7
+	if _boss.data:
+		_boss.data.attack_cooldown *= 0.7  # 攻击间隔 -30%
 	if _boss.visual:
 		_boss.visual.modulate = Color(1.0, 0.3, 0.3)
 	_do_shake(8.0)
@@ -38,7 +39,8 @@ func _enter_berserk() -> void:
 func _enter_dying() -> void:
 	phase = Phase.DYING
 	_boss.base_move_speed *= 1.6
-	_boss.attack_interval *= 0.5
+	if _boss.data:
+		_boss.data.attack_cooldown *= 0.5  # 攻击间隔 -50%
 	if _boss.visual:
 		_boss.visual.modulate = Color(0.6, 0.1, 1.0)
 		var tween = _boss.create_tween().set_loops()
