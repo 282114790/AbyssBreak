@@ -34,3 +34,7 @@ enum SkillType {
 @export var level_up_damage: float = 5.0
 @export var level_up_cooldown: float = -0.05
 @export var max_level: int = 5
+
+# 主动技能配置
+@export var is_active: bool = false         # true=主动技能（需按键触发），false=自动触发
+@export var active_slot: int = 0            # 0=Q槽 1=E槽（is_active=true时有效）

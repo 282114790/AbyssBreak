@@ -34,6 +34,10 @@ var relic_ids: Array = []        # 已拥有的遗物id列表
 var crit_chance: float = 0.05    # 暴击率（默认5%）
 var crit_mult: float = 1.5       # 暴击倍率（默认1.5倍）
 
+# 诅咒系统
+var curse_ids: Array = []        # 已接受的诅咒id列表
+var heal_disabled: bool = false  # 诅咒：无法回血
+
 # 内部
 var regen_timer: float = 0.0
 var is_showing_upgrade: bool = false  # 升级面板开关锁
@@ -141,6 +145,18 @@ func _setup_visual() -> void:
 	visual = anim_sprite
 	visual.play("idle")
 
+	# 施法动画（快速抬手：用walk前3帧高速播放）
+	frames.add_animation("cast")
+	frames.set_animation_loop("cast", false)
+	frames.set_animation_speed("cast", 18.0)
+	for i in range(min(3, frame_count)):
+		var catlas = AtlasTexture.new()
+		catlas.atlas = tex
+		catlas.region = Rect2(i * frame_w, 0, frame_w, frame_h)
+		catlas.margin = Rect2(2, 2, -4, -4)
+		frames.add_frame("cast", catlas)
+	visual.animation_finished.connect(_on_anim_finished)
+
 	# 描边轮廓 shader
 	var shader_mat = ShaderMaterial.new()
 	var outline_shader = load("res://assets/shaders/character_outline.gdshader")
@@ -158,6 +174,15 @@ func _setup_visual() -> void:
 	cap.height = 20.0
 	col.shape = cap
 	add_child(col)
+
+func _on_anim_finished() -> void:
+	if visual and visual.animation == "cast":
+		visual.play("idle")
+
+# 供 SkillBase 调用：播放施法动画
+func play_cast_anim() -> void:
+	if visual and not is_dodging:
+		visual.play("cast")
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -244,6 +269,9 @@ func _spawn_afterimage() -> void:
 	tween.tween_property(ghost, "modulate:a", 0.0, 0.15)
 	tween.tween_callback(ghost.queue_free)
 
+var _move_velocity: Vector2 = Vector2.ZERO  # 带惯性的速度
+var _footstep_timer: float = 0.0            # 脚步粒子计时
+
 func _handle_movement(delta: float) -> void:
 	var dir = Vector2.ZERO
 	if Input.is_action_pressed("move_up"):    dir.y -= 1
@@ -252,15 +280,45 @@ func _handle_movement(delta: float) -> void:
 	if Input.is_action_pressed("move_right"): dir.x += 1
 	if dir != Vector2.ZERO:
 		dir = dir.normalized()
-		if visual and visual.animation != "walk":
+		if visual and visual.animation != "walk" and visual.animation != "cast":
 			visual.play("walk")
-		# 左右翻转
 		if dir.x != 0:
 			visual.flip_h = dir.x < 0
+		# 惯性加速（0.12s 达到目标速度）
+		_move_velocity = _move_velocity.lerp(dir * move_speed, 1.0 - exp(-delta * 18.0))
+		# 脚步粒子
+		_footstep_timer -= delta
+		if _footstep_timer <= 0.0:
+			_footstep_timer = 0.18
+			_spawn_footstep()
 	else:
-		if visual and visual.animation != "idle":
+		if visual and visual.animation != "idle" and visual.animation != "cast":
 			visual.play("idle")
-	velocity = dir * move_speed
+		# 惯性减速
+		_move_velocity = _move_velocity.lerp(Vector2.ZERO, 1.0 - exp(-delta * 22.0))
+	velocity = _move_velocity
+
+func _spawn_footstep() -> void:
+	var fp = CPUParticles2D.new()
+	fp.emitting = false
+	fp.one_shot = true
+	fp.amount = 4
+	fp.lifetime = 0.25
+	fp.explosiveness = 0.9
+	fp.spread = 35.0
+	fp.direction = Vector2(0, 1)
+	fp.initial_velocity_min = 15.0
+	fp.initial_velocity_max = 30.0
+	fp.scale_amount_min = 2.0
+	fp.scale_amount_max = 4.0
+	fp.color = Color(0.5, 0.4, 0.3, 0.5)
+	fp.z_index = -1
+	get_tree().current_scene.add_child(fp)
+	fp.global_position = global_position + Vector2(0, 10)
+	fp.emitting = true
+	get_tree().create_timer(0.5).timeout.connect(func():
+		if is_instance_valid(fp): fp.queue_free()
+	)
 
 func _handle_regen(delta: float) -> void:
 	if regen_per_second <= 0:
@@ -315,6 +373,8 @@ func take_damage(dmg: float) -> void:
 		die()
 
 func heal(amount: float) -> void:
+	if heal_disabled:
+		return
 	current_hp = min(current_hp + amount, max_hp)
 	EventBus.emit_signal("player_damaged", current_hp, max_hp)
 

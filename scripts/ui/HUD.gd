@@ -133,35 +133,53 @@ func _show_elite_alert() -> void:
 	tween.tween_callback(alert.queue_free)
 
 # ── 升级面板 ──────────────────────────────────────────────────────────────────
+var _picks_remaining: int = 0   # 本次升级还剩几次选择（5选2 → picks=2）
+var _first_pick_done: bool = false
+
 func _show_upgrade_panel(choices: Array) -> void:
 	if not level_up_panel or not choice_buttons: return
 	_pending_choices = choices
+	_picks_remaining = 2      # 5选2
+	_first_pick_done = false
 	level_up_panel.visible = true
 	get_tree().paused = true
 	var snd = get_tree().get_first_node_in_group("sound_manager")
 	if snd: snd.play_level_up()
+	_rebuild_choice_buttons()
+
+func _rebuild_choice_buttons() -> void:
 	for child in choice_buttons.get_children(): child.free()
 
-	for i in range(choices.size()):
-		var choice = choices[i]
+	# 标题更新
+	var ptitle = level_up_panel.get_child(0) if level_up_panel.get_child_count() > 0 else null
+	if ptitle and ptitle is Label:
+		if _picks_remaining == 2:
+			ptitle.text = "⬆  选择升级（选 2 个）"
+		else:
+			ptitle.text = "⬆  再选 1 个"
+
+	for i in range(_pending_choices.size()):
+		var choice = _pending_choices[i]
+		var is_curse = choice.get("type", "") == "curse"
 		var btn = Button.new()
 		btn.text = "[%d] %s\n%s" % [i+1, choice["display_name"], choice.get("description","")]
-		btn.custom_minimum_size = Vector2(240, 120)
+		btn.custom_minimum_size = Vector2(190, 120)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.mouse_filter = Control.MOUSE_FILTER_STOP
-		btn.pressed.connect(_on_choice_selected.bind(choice))
+		btn.pressed.connect(_on_choice_selected.bind(choice, i))
 
+		var border_color = Color(1.0, 0.4, 0.1) if is_curse else Color(0.4, 0.6, 1.0)
 		var bs = StyleBoxFlat.new()
-		bs.bg_color = Color(0.08, 0.08, 0.25)
-		bs.border_width_left = 1; bs.border_width_right = 1
-		bs.border_width_top = 1; bs.border_width_bottom = 1
-		bs.border_color = Color(0.4, 0.6, 1.0)
+		bs.bg_color = Color(0.25, 0.04, 0.04) if is_curse else Color(0.08, 0.08, 0.25)
+		bs.border_width_left = 2; bs.border_width_right = 2
+		bs.border_width_top = 2; bs.border_width_bottom = 2
+		bs.border_color = border_color
 		bs.corner_radius_top_left = 4; bs.corner_radius_top_right = 4
 		bs.corner_radius_bottom_left = 4; bs.corner_radius_bottom_right = 4
 		btn.add_theme_stylebox_override("normal", bs)
 		var hs = bs.duplicate()
-		hs.bg_color = Color(0.15, 0.15, 0.4)
-		hs.border_color = Color(0.6, 0.8, 1.0)
+		hs.bg_color = Color(0.4, 0.1, 0.1) if is_curse else Color(0.15, 0.15, 0.4)
+		hs.border_color = Color(1.0, 0.6, 0.2) if is_curse else Color(0.6, 0.8, 1.0)
 		btn.add_theme_stylebox_override("hover", hs)
 
 		# 图标
@@ -184,17 +202,30 @@ func _show_upgrade_panel(choices: Array) -> void:
 
 func _input(event: InputEvent) -> void:
 	if not level_up_panel or not level_up_panel.visible: return
-	for i in range(1, 4):
+	for i in range(1, 6):  # 1-5 键对应最多5个选项
 		if event is InputEventKey and event.pressed and event.keycode == (KEY_0 + i):
 			if i - 1 < _pending_choices.size():
-				_on_choice_selected(_pending_choices[i - 1])
+				_on_choice_selected(_pending_choices[i - 1], i - 1)
 				get_viewport().set_input_as_handled()
 
-func _on_choice_selected(choice: Dictionary) -> void:
-	if level_up_panel: level_up_panel.visible = false
-	EventBus.game_logic_paused = false
-	get_tree().paused = false
+func _on_choice_selected(choice: Dictionary, idx: int) -> void:
+	# 立即应用该选择（不等第二次）
 	EventBus.emit_signal("upgrade_chosen", choice)
+	_first_pick_done = true
+	_picks_remaining -= 1
+
+	# 从列表里移除已选的
+	_pending_choices.remove_at(idx)
+
+	if _picks_remaining <= 0 or _pending_choices.is_empty():
+		# 选完了，关闭面板
+		if level_up_panel: level_up_panel.visible = false
+		EventBus.game_logic_paused = false
+		get_tree().paused = false
+		EventBus.emit_signal("upgrade_panel_closed")
+	else:
+		# 还有一次，重建按钮
+		_rebuild_choice_buttons()
 
 # ── 结算界面 ──────────────────────────────────────────────────────────────────
 func _on_game_over(survived_time: float, score: int) -> void:

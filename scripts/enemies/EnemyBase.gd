@@ -152,8 +152,75 @@ func _setup_visual() -> void:
 	col.shape = rect
 	add_child(col)
 
+	# ── #8/#18 敌人个性化外观 ──────────────────────────────
+	_apply_enemy_style()
+
+	# #23 Boss 自动挂载三阶段控制器
+	if data and data.display_name == "深渊魔王":
+		var bc = Node.new()
+		bc.set_script(load("res://scripts/enemies/BossController.gd"))
+		bc.name = "BossController"
+		add_child(bc)
+
 func _find_player() -> void:
 	player = get_tree().get_first_node_in_group("player")
+
+func _apply_enemy_style() -> void:
+	if not data or not visual: return
+	var is_elite = data.get("is_elite") if data.get("is_elite") != null else false
+	var is_boss  = (data.display_name == "深渊魔王")
+
+	# 精英：橙色描边光晕 + 体型+30%
+	if is_elite:
+		scale = Vector2(1.3, 1.3)
+		# 橙色外发光（简单模拟：在visual下放一个稍大的同色Rect）
+		var glow = ColorRect.new()
+		var gs = data.size * 1.6
+		glow.size = Vector2(gs, gs)
+		glow.position = Vector2(-gs * 0.5, -gs * 0.5)
+		glow.color = Color(1.0, 0.55, 0.05, 0.28)
+		glow.z_index = -1
+		add_child(glow)
+		# 持续脉冲缩放
+		var tween = create_tween().set_loops()
+		tween.tween_property(glow, "modulate:a", 0.08, 0.7)
+		tween.tween_property(glow, "modulate:a", 0.28, 0.7)
+		# 血条改橙色
+		if hp_bar: hp_bar.color = Color(1.0, 0.55, 0.1)
+		# 精英名称标签
+		var lbl = Label.new()
+		lbl.text = "★ " + data.display_name
+		lbl.add_theme_font_size_override("font_size", 9)
+		lbl.add_theme_color_override("font_color", Color(1.0, 0.75, 0.1))
+		lbl.position = Vector2(-30, -42)
+		add_child(lbl)
+
+	# Boss：紫色脉冲光环 + 体型不变（已经很大）
+	elif is_boss:
+		var glow = ColorRect.new()
+		var gs = data.size * 2.2
+		glow.size = Vector2(gs, gs)
+		glow.position = Vector2(-gs * 0.5, -gs * 0.5)
+		glow.color = Color(0.7, 0.1, 0.9, 0.22)
+		glow.z_index = -1
+		add_child(glow)
+		var tween = create_tween().set_loops()
+		tween.tween_property(glow, "scale", Vector2(1.15, 1.15), 0.9)
+		tween.tween_property(glow, "scale", Vector2(1.0, 1.0), 0.9)
+		if hp_bar:
+			hp_bar.size = Vector2(60, 6)
+			hp_bar.position = Vector2(-30, -50)
+			if hp_bar_bg:
+				hp_bar_bg.size = Vector2(60, 6)
+				hp_bar_bg.position = Vector2(-30, -50)
+			hp_bar.color = Color(0.8, 0.1, 0.9)
+
+	# 普通敌人按类型加颜色标记（colorize visual）
+	else:
+		if visual and data.color != Color.WHITE:
+			visual.modulate = data.color.lerp(Color.WHITE, 0.55)
+
+var _lod_frame: int = 0  # LOD帧计数器
 
 func _physics_process(delta: float) -> void:
 	if is_dead or not is_instance_valid(player):
@@ -162,10 +229,25 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
+	# #32 LOD：屏幕外的敌人每3帧才完整更新一次，节省CPU
+	_lod_frame += 1
+	var on_screen = _is_on_screen()
+	if not on_screen and _lod_frame % 3 != 0:
+		move_and_slide()
+		return
 	attack_timer -= delta
 	_move(delta)
 	_try_attack()
 	move_and_slide()
+
+func _is_on_screen() -> bool:
+	var vp = get_viewport()
+	if not vp: return true
+	var vp_rect = vp.get_visible_rect()
+	var cam = get_viewport().get_camera_2d()
+	if not cam: return true
+	var screen_pos = global_position - cam.global_position + vp_rect.size * 0.5
+	return vp_rect.grow(120).has_point(screen_pos)
 
 func _move(delta: float) -> void:
 	var dir = global_position.direction_to(player.global_position)
@@ -218,16 +300,17 @@ func _update_hp_bar() -> void:
 
 func die() -> void:
 	is_dead = true
-	# 音效
 	var snd = get_tree().get_first_node_in_group("sound_manager")
-	if snd:
-		snd.play_enemy_die()
-	# 死亡粒子特效
+	if snd: snd.play_enemy_die()
 	var fx = Node2D.new()
 	fx.set_script(load("res://scripts/systems/DeathEffect.gd"))
 	get_tree().current_scene.add_child(fx)
 	fx.global_position = global_position
 	fx.setup(data.color if data else Color(0.8, 0.2, 0.2))
-	# 掉落经验
+	# 精英/Boss死亡必掉遗物
+	var is_elite = data.get("is_elite") if data.get("is_elite") != null else false if data else false
+	var is_boss  = (data.display_name == "深渊魔王") if data else false
+	if (is_elite or is_boss) and get_tree().current_scene.has_method("_drop_relic_at"):
+		get_tree().current_scene._drop_relic_at(global_position)
 	EventBus.emit_signal("enemy_died", global_position, data.exp_reward if data else 5)
 	queue_free()

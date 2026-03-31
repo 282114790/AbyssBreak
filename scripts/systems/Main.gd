@@ -23,6 +23,7 @@ var gem_pool: Array = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_setup_object_pool()
 	_setup_meta_progress()
 	_setup_char_registry()
 	_setup_achievement_system()
@@ -31,8 +32,13 @@ func _ready() -> void:
 	_setup_background()
 	_setup_result_screen()
 	_setup_sound_manager()
-	# 先弹角色选择，选完再初始化玩家/波次/HUD
 	_show_char_select()
+
+func _setup_object_pool() -> void:
+	var pool = Node.new()
+	pool.set_script(load("res://scripts/systems/ObjectPool.gd"))
+	pool.name = "ObjectPool"
+	add_child(pool)
 
 # ────────────────────────────────────────
 # 成就系统
@@ -51,6 +57,7 @@ func _connect_event_bus() -> void:
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.player_died.connect(_on_player_died)
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
+	EventBus.upgrade_panel_closed.connect(_on_upgrade_panel_closed)
 	EventBus.show_level_up_panel.connect(_on_show_level_up)
 	EventBus.player_damaged.connect(_on_player_damaged)
 	EventBus.wave_changed.connect(_on_wave_changed_relic)
@@ -241,10 +248,57 @@ func _start_game() -> void:
 	_setup_wave_manager()
 	_setup_hud()
 	_register_demo_content()
+	_setup_synergy_system()
+	_setup_merchant()
+	_setup_random_events()
+	_setup_tutorial()
 	if current_difficulty and wave_manager:
 		wave_manager.set_meta("difficulty", current_difficulty)
 		set_meta("current_difficulty_mult", current_difficulty.soul_stone_mult)
 	wave_manager.start(player)
+
+func _setup_merchant() -> void:
+	var m = Node.new()
+	m.set_script(load("res://scripts/systems/MerchantSystem.gd"))
+	m.name = "MerchantSystem"
+	add_child(m)
+
+func _setup_random_events() -> void:
+	var r = Node.new()
+	r.set_script(load("res://scripts/systems/RandomEventSystem.gd"))
+	r.name = "RandomEventSystem"
+	add_child(r)
+
+func _setup_tutorial() -> void:
+	var t = Node.new()
+	t.set_script(load("res://scripts/systems/TutorialSystem.gd"))
+	t.name = "TutorialSystem"
+	add_child(t)
+
+var synergy_system: Node = null
+
+func _setup_synergy_system() -> void:
+	synergy_system = Node.new()
+	synergy_system.set_script(load("res://scripts/systems/SynergySystem.gd"))
+	synergy_system.name = "SynergySystem"
+	add_child(synergy_system)
+	EventBus.synergy_activated.connect(_on_synergy_activated)
+
+func _on_synergy_activated(syn: Dictionary) -> void:
+	if not hud_layer: return
+	var lbl = Label.new()
+	lbl.text = "✨ 协同激活：%s\n%s" % [syn["name"], syn["desc"]]
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", syn.get("color", Color.WHITE))
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.anchor_left = 0.5; lbl.anchor_right = 0.5
+	lbl.anchor_top = 0.7; lbl.anchor_bottom = 0.7
+	lbl.offset_left = -300; lbl.offset_right = 300; lbl.offset_top = -30; lbl.offset_bottom = 30
+	hud_layer.add_child(lbl)
+	var t = lbl.create_tween()
+	t.tween_interval(2.0)
+	t.tween_property(lbl, "modulate:a", 0.0, 0.5)
+	t.tween_callback(lbl.queue_free)
 
 func _setup_hud() -> void:
 	hud_layer = CanvasLayer.new()
@@ -553,6 +607,8 @@ func _register_demo_content() -> void:
 	void_data.scene_path = "res://scripts/skills/SkillVoidRift.gd"
 	void_data.damage = 20.0
 	void_data.level_up_damage = 10.0
+	void_data.is_active = true
+	void_data.active_slot = 0  # Q键
 	UpgradeSystem.available_skills.append(void_data)
 
 	# 奥术弹幕
@@ -594,6 +650,8 @@ func _register_demo_content() -> void:
 	slow_data.scene_path = "res://scripts/skills/SkillTimeSlow.gd"
 	slow_data.damage = 0.0
 	slow_data.level_up_damage = 0.0
+	slow_data.is_active = true
+	slow_data.active_slot = 1  # E键
 	UpgradeSystem.available_skills.append(slow_data)
 
 	# 荆棘护甲
@@ -730,11 +788,13 @@ func _on_show_level_up(choices: Array) -> void:
 	get_tree().paused = true
 
 func _on_upgrade_chosen(choice: Dictionary) -> void:
-	EventBus.game_logic_paused = false  # 恢复敌人移动和波次
-	get_tree().paused = false
+	# 只应用升级，不解锁游戏（HUD负责判断是否还有第二次选择）
+	_apply_upgrade(choice)
+
+func _on_upgrade_panel_closed() -> void:
+	# 面板全部关闭后解锁 player 状态
 	if is_instance_valid(player):
 		player.is_showing_upgrade = false
-	_apply_upgrade(choice)
 
 func _apply_upgrade(choice: Dictionary) -> void:
 	match choice.get("type", ""):
@@ -753,13 +813,55 @@ func _apply_upgrade(choice: Dictionary) -> void:
 			for pd in UpgradeSystem.available_passives:
 				if pd.id == choice["passive_id"]:
 					player.apply_passive(pd)
-					# 通知成就系统
 					if achievement_system:
 						achievement_system.on_passive_picked()
 		"heal":
 			player.heal(player.max_hp * 0.3)
 		"evolve":
 			_apply_evolve(choice)
+		"curse":
+			_apply_curse(choice)
+
+func _apply_curse(choice: Dictionary) -> void:
+	if not is_instance_valid(player): return
+	var cid = choice.get("curse_id", "")
+	if not player.curse_ids:
+		player.curse_ids = []
+	player.curse_ids.append(cid)
+	# 应用诅咒效果
+	var hp_m = choice.get("hp_mult", 1.0)
+	var spd_m = choice.get("speed_mult", 1.0)
+	var cd_m = choice.get("cooldown_mult", 1.0)
+	var regen_b = choice.get("regen_bonus", 0.0)
+	var exp_m = choice.get("exp_mult", 1.0)
+	var cc = choice.get("crit_chance", 0.0)
+	var cm = choice.get("crit_mult", 1.0)
+	if hp_m != 1.0:
+		var lost = player.max_hp * (1.0 - hp_m)
+		player.max_hp = max(10.0, player.max_hp * hp_m)
+		player.current_hp = max(1.0, player.current_hp - lost)
+		EventBus.emit_signal("player_damaged", player.current_hp, player.max_hp)
+	if spd_m != 1.0:
+		player.move_speed *= spd_m
+	if cd_m != 1.0:
+		for skill in player.skills:
+			if skill.data:
+				skill.data.cooldown = max(0.08, skill.data.cooldown * cd_m)
+	if regen_b != 0.0:
+		player.regen_per_second += regen_b
+	if exp_m != 1.0:
+		player.exp_multiplier *= exp_m
+	if cc != 0.0:
+		player.crit_chance += cc
+	if cm != 1.0:
+		player.crit_mult *= cm
+	if choice.get("disable_heal", false):
+		player.heal_disabled = true
+	# 红色闪光提示诅咒生效
+	if is_instance_valid(player) and player.visual:
+		var t = player.visual.create_tween()
+		t.tween_property(player.visual, "modulate", Color(1.5, 0.2, 0.2), 0.1)
+		t.tween_property(player.visual, "modulate", Color(1,1,1), 0.3)
 
 func _apply_evolve(choice: Dictionary) -> void:
 	var base_skill_id = choice.get("skill_id", "")
@@ -799,15 +901,29 @@ func _on_player_damaged(_current_hp: float, _max_hp: float) -> void:
 		screen_shake.start(8.0)
 
 func _on_player_died() -> void:
-	get_tree().paused = true
+	# #27 死亡慢镜头：0.3秒内减速到0.15x，然后暂停
+	Engine.time_scale = 1.0
+	var slow_tween = create_tween()
+	slow_tween.tween_property(Engine, "time_scale", 0.15, 0.3)
+	slow_tween.tween_callback(func():
+		Engine.time_scale = 1.0
+		get_tree().paused = true
+	)
+	# 死亡时屏幕变灰
+	if hud_layer:
+		var gray = ColorRect.new()
+		gray.color = Color(0.1, 0.1, 0.15, 0.0)
+		gray.set_anchors_preset(Control.PRESET_FULL_RECT)
+		gray.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hud_layer.add_child(gray)
+		var gt = gray.create_tween()
+		gt.tween_property(gray, "color:a", 0.65, 0.5)
 	EventBus.emit_signal("game_over", game_time, player.total_score if is_instance_valid(player) else 0)
-	# 每日挑战：标记完成
 	if daily_challenge and daily_modifier_type >= 0:
 		daily_challenge.mark_completed(meta_progress)
-	# 延迟0.8秒再弹结算，让死亡特效播完
-	get_tree().create_timer(0.8, true).timeout.connect(func():
+	# 延迟1.2秒再弹结算（比原来长，因为慢镜头）
+	get_tree().create_timer(1.2, true).timeout.connect(func():
 		if is_instance_valid(result_screen):
-			var kills = get_tree().get_nodes_in_group("enemies").size()  # 粗略，后续用计数器
 			result_screen.show_result(
 				wave_manager.current_wave,
 				player.total_score if is_instance_valid(player) else 0,
@@ -828,14 +944,46 @@ func _process(_delta: float) -> void:
 		var lbl = hud_layer.get_meta("soul_label")
 		if is_instance_valid(lbl):
 			lbl.text = str(meta_progress.soul_stones)
-	# 更新技能槽
+	# 更新技能槽（重建结构）
 	_update_skill_bar()
+	# 更新CD显示（每帧）
+	_update_skill_cd()
+	# 检测技能协同（#17）
+	if synergy_system and is_instance_valid(player):
+		synergy_system.check_synergies(player)
 
 # HUD 需要的 game_time 接口
 var game_time: float = 0.0
 var game_over_flag: bool = false
 
 var _skill_bar_cache: int = -1  # 技能数量缓存，变化时才重建
+
+# #9 每帧更新技能CD遮罩（ProgressBar形式）
+func _update_skill_cd() -> void:
+	if not hud_layer or not hud_layer.has_meta("skill_bar"): return
+	if not is_instance_valid(player): return
+	var bar = hud_layer.get_meta("skill_bar")
+	if not is_instance_valid(bar): return
+	var slots = bar.get_children()
+	for i in range(min(slots.size(), player.skills.size())):
+		var slot = slots[i]
+		var skill = player.skills[i]
+		if not is_instance_valid(skill) or not skill.data: continue
+		var cd_bar = slot.get_node_or_null("CdBar")
+		if cd_bar == null: continue
+		var total_cd = max(skill.data.cooldown + skill.data.level_up_cooldown * (skill.level - 1), 0.1)
+		var ratio = clamp(skill.cooldown_timer / total_cd, 0.0, 1.0)
+		cd_bar.value = ratio * 100.0
+		cd_bar.modulate.a = 0.65 if ratio > 0.0 else 0.0
+		# 就绪时脉冲闪光
+		if ratio <= 0.0:
+			var ready_flash = slot.get_node_or_null("ReadyFlash")
+			if ready_flash and not ready_flash.get_meta("flashing", false):
+				ready_flash.set_meta("flashing", true)
+				var t = ready_flash.create_tween()
+				t.tween_property(ready_flash, "modulate:a", 0.7, 0.15)
+				t.tween_property(ready_flash, "modulate:a", 0.0, 0.25)
+				t.tween_callback(func(): if is_instance_valid(ready_flash): ready_flash.set_meta("flashing", false))
 
 func _update_skill_bar() -> void:
 	if not hud_layer or not hud_layer.has_meta("skill_bar"): return
@@ -904,6 +1052,16 @@ func _update_skill_bar() -> void:
 			lv_lbl.offset_left = -24; lv_lbl.offset_top = 2
 			slot.add_child(lv_lbl)
 
+			# 主动技能标记 [Q] / [E]
+			if skill.data and skill.data.is_active:
+				var key_lbl = Label.new()
+				key_lbl.text = "[Q]" if skill.data.active_slot == 0 else "[E]"
+				key_lbl.add_theme_font_size_override("font_size", 11)
+				key_lbl.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+				key_lbl.set_anchors_preset(Control.PRESET_TOP_LEFT)
+				key_lbl.offset_left = 2; key_lbl.offset_top = 2
+				slot.add_child(key_lbl)
+
 			var name_lbl = Label.new()
 			name_lbl.text = skill.data.display_name.substr(2) if skill.data else "?"  # 去掉emoji前缀
 			name_lbl.add_theme_font_size_override("font_size", 9)
@@ -911,6 +1069,30 @@ func _update_skill_bar() -> void:
 			name_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 			name_lbl.offset_bottom = 0; name_lbl.offset_top = -16
 			slot.add_child(name_lbl)
+
+			# CD遮罩（半透明黑色ProgressBar从顶部向下收缩）
+			var cd_bar = ProgressBar.new()
+			cd_bar.name = "CdBar"
+			cd_bar.max_value = 100; cd_bar.value = 0
+			cd_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+			cd_bar.fill_mode = ProgressBar.FILL_TOP_TO_BOTTOM
+			cd_bar.modulate = Color(0, 0, 0, 0.65)
+			cd_bar.show_percentage = false
+			var cd_style = StyleBoxFlat.new()
+			cd_style.bg_color = Color(0, 0, 0, 0.72)
+			cd_bar.add_theme_stylebox_override("fill", cd_style)
+			var empty_style = StyleBoxFlat.new()
+			empty_style.bg_color = Color(0, 0, 0, 0)
+			cd_bar.add_theme_stylebox_override("background", empty_style)
+			slot.add_child(cd_bar)
+
+			# 就绪闪光（白色半透明Rect，技能就绪时脉冲）
+			var ready_flash = ColorRect.new()
+			ready_flash.name = "ReadyFlash"
+			ready_flash.color = Color(1, 1, 0.5, 0.0)
+			ready_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+			ready_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			slot.add_child(ready_flash)
 
 		bar.add_child(slot)
 
@@ -922,6 +1104,10 @@ func _physics_process(delta: float) -> void:
 			game_over_flag = true
 			get_tree().paused = true
 			EventBus.emit_signal("player_won", game_time, player.total_score if is_instance_valid(player) else 0)
+		# 30秒事件系统
+		_tick_thirty_second_events(delta)
+
+var _pause_menu: CanvasLayer = null
 
 func _input(event: InputEvent) -> void:
 	# R 键重新开始（game over 或 victory 后）
@@ -929,6 +1115,13 @@ func _input(event: InputEvent) -> void:
 		if game_over_flag or (is_instance_valid(player) and player.is_dead):
 			get_tree().paused = false
 			get_tree().reload_current_scene()
+	# ESC / P 暂停菜单（#28）
+	if event is InputEventKey and event.pressed and (event.keycode == KEY_ESCAPE or event.keycode == KEY_P):
+		if game_over_flag: return
+		if hud_layer and hud_layer.has_meta("level_up_panel"):
+			var lup = hud_layer.get_meta("level_up_panel")
+			if is_instance_valid(lup) and lup.visible: return  # 升级面板打开时不触发暂停
+		_toggle_pause_menu()
 
 # ────────────────────────────────────────
 # 遗物系统
@@ -944,17 +1137,26 @@ func _on_wave_changed_relic(wave: int) -> void:
 		_drop_relic_near_player()
 
 func _drop_relic_near_player() -> void:
-	if not is_instance_valid(player):
-		return
-	var owned = player.get("relic_ids") if player.get("relic_ids") != null else []
+	if not is_instance_valid(player): return
+	var owned = player.relic_ids if "relic_ids" in player else []
 	var choices = RelicRegistry.get_random_choices(3, owned)
-	if choices.is_empty():
-		return
+	if choices.is_empty(): return
 	var drop = Area2D.new()
 	drop.set_script(load("res://scripts/systems/RelicDrop.gd"))
 	add_child(drop)
-	# 掉落在玩家右侧100px，避免直接踩上
 	drop.global_position = player.global_position + Vector2(randf_range(80, 140), randf_range(-60, 60))
+	drop.setup(choices)
+
+# 精英/Boss死亡时在指定位置掉落遗物（#18）
+func _drop_relic_at(pos: Vector2) -> void:
+	if not is_instance_valid(player): return
+	var owned = player.relic_ids if "relic_ids" in player else []
+	var choices = RelicRegistry.get_random_choices(3, owned)
+	if choices.is_empty(): return
+	var drop = Area2D.new()
+	drop.set_script(load("res://scripts/systems/RelicDrop.gd"))
+	add_child(drop)
+	drop.global_position = pos
 	drop.setup(choices)
 
 func _on_relic_drop_touched(choices: Array) -> void:
@@ -968,3 +1170,175 @@ func _on_relic_drop_touched(choices: Array) -> void:
 	panel.layer = 20  # 最顶层
 	add_child(panel)
 	panel.setup(choices, player)
+
+# ────────────────────────────────────────
+# 30秒必有事件系统
+# ────────────────────────────────────────
+var _last_event_time: float = 0.0
+var _event_index: int = 0  # 循环事件序号（决定下次触发哪种事件）
+
+func _tick_thirty_second_events(_delta: float) -> void:
+	if game_time - _last_event_time < 30.0:
+		return
+	if not is_instance_valid(player):
+		return
+	_last_event_time = game_time
+	# 事件轮转：0=新敌种出现提示, 1=遗物掉落, 2=精英波速招, 3=环境增益气泡
+	var event_type = _event_index % 4
+	_event_index += 1
+	match event_type:
+		0: _event_new_enemy_type()
+		1: _event_relic_drop_bonus()
+		2: _event_spawn_elite_burst()
+		3: _event_healing_bubble()
+
+func _event_new_enemy_type() -> void:
+	# 屏幕上方提示"新威胁出现"
+	_show_event_banner("⚠ 新的威胁出现了！", Color(1.0, 0.5, 0.1))
+
+func _event_relic_drop_bonus() -> void:
+	# 额外掉一个遗物（不重复）
+	if not is_instance_valid(player): return
+	var owned = player.relic_ids if "relic_ids" in player else []
+	var choices = RelicRegistry.get_random_choices(3, owned)
+	if choices.is_empty(): return
+	var drop = Area2D.new()
+	drop.set_script(load("res://scripts/systems/RelicDrop.gd"))
+	add_child(drop)
+	drop.global_position = player.global_position + Vector2(randf_range(-100, 100), randf_range(-100, 100))
+	drop.setup(choices)
+	_show_event_banner("🎁 遗物出现了！", Color(1.0, 0.9, 0.1))
+
+func _event_spawn_elite_burst() -> void:
+	# 立刻生成2-3个精英怪
+	if not is_instance_valid(wave_manager): return
+	var count = 2 + (wave_manager.wave_cycle if wave_manager.has("wave_cycle") else 0)
+	count = clamp(count, 2, 4)
+	for i in range(count):
+		wave_manager.call_deferred("_spawn_elite")
+	_show_event_banner("💀 精英军团来袭！", Color(1.0, 0.3, 0.3))
+
+func _event_healing_bubble() -> void:
+	# 生成3个治疗气泡（玩家走过去加血）
+	for i in range(3):
+		var bubble = Area2D.new()
+		bubble.set_script(load("res://scripts/systems/HealBubble.gd") if ResourceLoader.exists("res://scripts/systems/HealBubble.gd") else null)
+		if not bubble.get_script(): bubble.queue_free(); continue
+		add_child(bubble)
+		var offset = Vector2(randf_range(-150, 150), randf_range(-150, 150))
+		bubble.global_position = player.global_position + offset
+		bubble.setup(player.max_hp * 0.1)  # 每个恢复10%最大血量
+	_show_event_banner("💚 治疗气泡出现了！", Color(0.3, 1.0, 0.3))
+
+func _show_event_banner(text: String, color: Color) -> void:
+	if not hud_layer: return
+	var lbl = Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_color_override("font_color", color)
+	lbl.anchor_left   = 0.5; lbl.anchor_right  = 0.5
+	lbl.anchor_top    = 0.2; lbl.anchor_bottom = 0.2
+	lbl.offset_left = -300; lbl.offset_right = 300
+	lbl.offset_top  = -20;  lbl.offset_bottom = 20
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud_layer.add_child(lbl)
+	var tween = lbl.create_tween()
+	tween.tween_interval(1.5)
+	tween.tween_property(lbl, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(lbl.queue_free)
+func _toggle_pause_menu() -> void:
+	if is_instance_valid(_pause_menu):
+		# 关闭暂停菜单
+		_pause_menu.queue_free()
+		_pause_menu = null
+		get_tree().paused = false
+		return
+	# 打开暂停菜单
+	get_tree().paused = true
+	_pause_menu = CanvasLayer.new()
+	_pause_menu.layer = 15
+	_pause_menu.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_pause_menu)
+	# 背景遮罩
+	var overlay = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.72)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pause_menu.add_child(overlay)
+	# 面板
+	var panel = VBoxContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(520, 400)
+	panel.position = Vector2(-260, -200)
+	panel.add_theme_constant_override("separation", 10)
+	_pause_menu.add_child(panel)
+	# 标题
+	var title = Label.new()
+	title.text = "⏸ 已暂停"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", Color(1, 1, 0.7))
+	panel.add_child(title)
+	# 分割线
+	panel.add_child(_make_hsep())
+	# 技能Build展示
+	if is_instance_valid(player):
+		var sk_lbl = Label.new()
+		sk_lbl.text = "⚔ 当前技能"
+		sk_lbl.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0))
+		sk_lbl.add_theme_font_size_override("font_size", 14)
+		panel.add_child(sk_lbl)
+		for skill in player.skills:
+			if skill.data:
+				var row = Label.new()
+				var prefix = "[Q] " if (skill.data.is_active and skill.data.active_slot == 0) else ("[E] " if (skill.data.is_active and skill.data.active_slot == 1) else "  ")
+				row.text = "  %s%s  Lv%d  —  伤害 %.0f  CD %.1fs" % [prefix, skill.data.display_name, skill.level, skill.get_current_damage(), max(skill.data.cooldown + skill.data.level_up_cooldown * (skill.level-1), 0.1)]
+				row.add_theme_font_size_override("font_size", 12)
+				panel.add_child(row)
+		panel.add_child(_make_hsep())
+		# 遗物
+		var rel_lbl = Label.new()
+		rel_lbl.text = "💎 当前遗物"
+		rel_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		rel_lbl.add_theme_font_size_override("font_size", 14)
+		panel.add_child(rel_lbl)
+		if player.relic_ids.is_empty():
+			var none_lbl = Label.new(); none_lbl.text = "  （暂无遗物）"
+			none_lbl.add_theme_font_size_override("font_size", 12); panel.add_child(none_lbl)
+		else:
+			for rid in player.relic_ids:
+				var rdata = RelicRegistry.get_relic(rid)
+				var r_row = Label.new()
+				r_row.text = "  %s  —  %s" % [rdata.display_name if rdata else rid, rdata.description if rdata else ""]
+				r_row.add_theme_font_size_override("font_size", 12); panel.add_child(r_row)
+		panel.add_child(_make_hsep())
+		# 诅咒
+		if player.curse_ids.size() > 0:
+			var c_lbl = Label.new()
+			c_lbl.text = "☠ 诅咒"
+			c_lbl.add_theme_color_override("font_color", Color(1.0, 0.3, 0.2))
+			c_lbl.add_theme_font_size_override("font_size", 14); panel.add_child(c_lbl)
+			for cid in player.curse_ids:
+				var cr = Label.new(); cr.text = "  " + cid
+				cr.add_theme_font_size_override("font_size", 12); panel.add_child(cr)
+			panel.add_child(_make_hsep())
+	# 按钮
+	var btn_resume = Button.new()
+	btn_resume.text = "▶ 继续游戏 (ESC/P)"
+	btn_resume.custom_minimum_size = Vector2(260, 40)
+	btn_resume.pressed.connect(_toggle_pause_menu)
+	panel.add_child(btn_resume)
+	var btn_restart = Button.new()
+	btn_restart.text = "🔄 重新开始"
+	btn_restart.custom_minimum_size = Vector2(260, 40)
+	btn_restart.pressed.connect(func():
+		get_tree().paused = false
+		Engine.time_scale = 1.0
+		get_tree().reload_current_scene()
+	)
+	panel.add_child(btn_restart)
+
+func _make_hsep() -> HSeparator:
+	var s = HSeparator.new()
+	s.add_theme_color_override("color", Color(1,1,1,0.18))
+	return s

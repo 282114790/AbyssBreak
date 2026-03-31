@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://b1kkrae8gi5km"
+
+[deps]
+
+files=["res://TODOLIST.category.translation", "res://TODOLIST.priority.translation", "res://TODOLIST.title.translation", "res://TODOLIST.detail.translation", "res://TODOLIST.status.translation", "res://TODOLIST.note.translation"]
+
+source_file="res://TODOLIST.csv"
+dest_files=["res://TODOLIST.category.translation", "res://TODOLIST.priority.translation", "res://TODOLIST.title.translation", "res://TODOLIST.detail.translation", "res://TODOLIST.status.translation", "res://TODOLIST.note.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

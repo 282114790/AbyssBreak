@@ -1,5 +1,5 @@
 # UpgradeSystem.gd
-# 升级选项生成系统 - 随机生成3个升级选项
+# 升级选项生成系统 - 5选2，含诅咒选项（风险换高收益）
 extends Node
 
 # 所有可用技能数据（在GameManager中注册）
@@ -24,13 +24,50 @@ static var evolve_table: Dictionary = {
 	}
 }
 
-# 生成升级选项（3选1）
+# 诅咒选项池（风险换高收益）
+static var curse_pool: Array = [
+	{
+		"type": "curse",
+		"curse_id": "glass_cannon",
+		"display_name": "⚠ 诅咒：玻璃炮",
+		"description": "最大血量-30%，但伤害+50%",
+		"hp_mult": 0.7, "damage_bonus": 0.5
+	},
+	{
+		"type": "curse",
+		"curse_id": "cursed_speed",
+		"display_name": "⚠ 诅咒：狂乱",
+		"description": "移动速度-20%，但所有冷却-25%",
+		"speed_mult": 0.8, "cooldown_mult": 0.75
+	},
+	{
+		"type": "curse",
+		"curse_id": "soul_pact",
+		"display_name": "⚠ 诅咒：灵魂契约",
+		"description": "每5秒损失5HP，但经验获取+60%",
+		"regen_bonus": -5.0, "exp_mult": 1.6
+	},
+	{
+		"type": "curse",
+		"curse_id": "berserker",
+		"display_name": "⚠ 诅咒：狂战士",
+		"description": "无法回血，但暴击率+25%暴击倍率×2",
+		"disable_heal": true, "crit_chance": 0.25, "crit_mult": 2.0
+	},
+]
+
+# 生成升级选项（5选2）
 static func generate_choices(player: Player) -> Array:
 	var choices = []
 	var pool = _build_pool(player)
 	pool.shuffle()
-	for i in range(min(3, pool.size())):
-		choices.append(pool[i])
+	# 进化选项优先排到最前（不打乱）
+	var evolve_choices = pool.filter(func(c): return c.get("type") == "evolve")
+	var normal_choices = pool.filter(func(c): return c.get("type") != "evolve")
+	normal_choices.shuffle()
+	var final_pool = evolve_choices + normal_choices
+	for i in range(min(5, final_pool.size())):
+		choices.append(final_pool[i])
 	return choices
 
 static func _build_pool(player: Player) -> Array:
@@ -76,10 +113,17 @@ static func _build_pool(player: Player) -> Array:
 				"weight": 2
 			})
 
+	# 诅咒选项（每次升级30%概率出现1个）
+	var owned_curses = player.get("curse_ids") if player.get("curse_ids") != null else []
+	var available_curses = curse_pool.filter(func(c): return c["curse_id"] not in owned_curses)
+	if available_curses.size() > 0 and randf() < 0.30:
+		available_curses.shuffle()
+		pool.append(available_curses[0])
+
 	# 回血选项（保底）
 	pool.append({
 		"type": "heal",
-		"display_name": "恢复生命",
+		"display_name": "🩹 恢复生命",
 		"description": "恢复30%最大生命值",
 		"weight": 1
 	})
@@ -92,10 +136,8 @@ static func _check_evolve(player: Player) -> Array:
 		var sid = skill.data.id
 		if not evolve_table.has(sid):
 			continue
-		# 检查是否满级
 		if skill.level < skill.data.max_level:
 			continue
-		# 检查是否已经进化（evolved_id 已在技能中）
 		var et = evolve_table[sid]
 		var already_evolved = false
 		for s in player.skills:
@@ -104,11 +146,9 @@ static func _check_evolve(player: Player) -> Array:
 				break
 		if already_evolved:
 			continue
-		# 检查是否拥有对应被动
 		var needed_passive = et["passive_id"]
 		if needed_passive not in player.passive_ids:
 			continue
-		# 满足条件，插入进化选项
 		evolve_choices.append({
 			"type": "evolve",
 			"skill_id": sid,

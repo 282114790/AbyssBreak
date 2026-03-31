@@ -65,3 +65,9 @@ static func _make(id: String, name: String, desc: String, rarity: int, props: Di
 		2: r.icon_emoji = "💜"
 		3: r.icon_emoji = "🌟"
 	return r
+
+static func get_relic(id: String) -> RelicData:
+	for r in get_all():
+		if r.id == id: return r
+	return null
+

@@ -46,9 +46,9 @@ func _ready() -> void:
 	monitoring = true
 	if not body_entered.is_connected(_on_hit):
 		body_entered.connect(_on_hit)
-	# 自动销毁
+	# 自动销毁（优先归还对象池）
 	var timer = get_tree().create_timer(lifetime)
-	timer.timeout.connect(queue_free)
+	timer.timeout.connect(_return_to_pool)
 	# 不再用 Line2D 拖尾（会产生红线残影），已由 GPUParticles2D 尾迹替代
 
 func _process(delta: float) -> void:
@@ -83,7 +83,20 @@ func _on_hit(body: Node2D) -> void:
 	_spawn_hit_effect()
 	pierce_count -= 1
 	if pierce_count <= 0:
+		_return_to_pool()
+
+func _return_to_pool() -> void:
+	var pool = get_tree().current_scene.get_node_or_null("ObjectPool")
+	if pool and pool.has_method("release"):
+		pool.release(self)
+	else:
 		queue_free()
+
+func reset_for_pool() -> void:
+	visible = false
+	velocity = Vector2.ZERO
+	target = null
+	pierce_count = 1
 
 func _spawn_hit_effect() -> void:
 	var hit = GPUParticles2D.new()

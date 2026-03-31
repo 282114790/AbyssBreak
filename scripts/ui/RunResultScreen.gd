@@ -15,12 +15,23 @@ func show_result(wave: int, score: int, survive_sec: float, kills: int, won: boo
 	if _meta == null:
 		push_error("MetaProgress not found")
 		return
-
 	var earned = _meta.on_run_ended(wave, score, survive_sec, kills)
 	visible = true
-	_build_ui(wave, score, survive_sec, kills, won, earned)
+	# 收集 player 的 Build 数据（#20）
+	var player = get_tree().get_first_node_in_group("player")
+	var build_skills: Array = []
+	var build_relics: Array = []
+	var build_curses: Array = []
+	if is_instance_valid(player):
+		for s in player.skills:
+			if s.data: build_skills.append({"name": s.data.display_name, "level": s.level})
+		for rid in player.relic_ids if "relic_ids" in player else []:
+			var rd = RelicRegistry.get_relic(rid)
+			build_relics.append(rd.display_name if rd else rid)
+		build_curses = player.curse_ids if "curse_ids" in player else []
+	_build_ui(wave, score, survive_sec, kills, won, earned, build_skills, build_relics, build_curses)
 
-func _build_ui(wave: int, score: int, survive_sec: float, kills: int, won: bool, earned: int) -> void:
+func _build_ui(wave: int, score: int, survive_sec: float, kills: int, won: bool, earned: int, build_skills: Array = [], build_relics: Array = [], build_curses: Array = []) -> void:
 	# 清理旧节点
 	for c in get_children():
 		c.queue_free()
@@ -76,6 +87,32 @@ func _build_ui(wave: int, score: int, survive_sec: float, kills: int, won: bool,
 	# 历史最佳
 	_add_stat_row(vbox, "🏆 历史最高波次", "第 %d 波" % _meta.best_wave, Color(0.9, 0.75, 0.2))
 	_add_stat_row(vbox, "🏅 历史最高分",   "%d" % _meta.best_score,     Color(0.9, 0.75, 0.2))
+
+	# #20 本局 Build 展示
+	if not build_skills.is_empty() or not build_relics.is_empty():
+		vbox.add_child(_make_separator())
+		var build_lbl = Label.new()
+		build_lbl.text = "📋 本局 Build"
+		build_lbl.add_theme_font_size_override("font_size", 13)
+		build_lbl.add_theme_color_override("font_color", Color(0.7, 0.95, 1.0))
+		vbox.add_child(build_lbl)
+		for sk in build_skills:
+			var r = Label.new()
+			r.text = "  ⚔ %s  Lv%d" % [sk["name"], sk["level"]]
+			r.add_theme_font_size_override("font_size", 11)
+			vbox.add_child(r)
+		for rn in build_relics:
+			var r = Label.new()
+			r.text = "  💎 %s" % rn
+			r.add_theme_font_size_override("font_size", 11)
+			r.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+			vbox.add_child(r)
+		for cn in build_curses:
+			var r = Label.new()
+			r.text = "  ☠ %s" % cn
+			r.add_theme_font_size_override("font_size", 11)
+			r.add_theme_color_override("font_color", Color(1.0, 0.3, 0.2))
+			vbox.add_child(r)
 
 	vbox.add_child(_make_separator())
 

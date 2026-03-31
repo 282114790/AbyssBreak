@@ -62,6 +62,7 @@ var _deco_active   : Dictionary = {}
 var _torch_active  : Dictionary = {}
 
 var _camera : Camera2D
+var _parallax_particles: CPUParticles2D = null  # 漂浮环境粒子
 
 # ── SpriteFrames 缓存 ─────────────────────────────────
 var _torch_frames : SpriteFrames = null
@@ -73,9 +74,29 @@ func _ready() -> void:
 	_build_torch_frames()
 	_find_camera()
 	_draw_world_border()
-	# Layer3 网格：DEBUG_LAYER==3 或全开时显示
+	_setup_ambient_particles()
 	if DEBUG_LAYER == -1 or DEBUG_LAYER == 3:
 		_draw_room_grid()
+
+func _setup_ambient_particles() -> void:
+	# #10 漂浮魔法粒子 — 跟随场景漂浮，营造地牢氛围
+	var p = CPUParticles2D.new()
+	p.amount = 35
+	p.lifetime = 5.0
+	p.explosiveness = 0.0
+	p.randomness = 1.0
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = Vector2(800, 450)
+	p.direction = Vector2(0.15, -1.0)
+	p.spread = 20.0
+	p.initial_velocity_min = 6.0
+	p.initial_velocity_max = 18.0
+	p.scale_amount_min = 1.0
+	p.scale_amount_max = 3.5
+	p.color = Color(0.35, 0.5, 0.9, 0.25)
+	p.z_index = -5
+	add_child(p)
+	_parallax_particles = p
 
 func _setup_noise() -> void:
 	_noise_floor.seed  = 42;   _noise_floor.noise_type  = FastNoiseLite.TYPE_SIMPLEX; _noise_floor.frequency  = 0.08
@@ -118,7 +139,6 @@ func _find_camera() -> void:
 # ── 每帧更新 ──────────────────────────────────────────
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_camera):
-		# 持续尝试获取 camera，直到拿到为止
 		var parent = get_parent()
 		if parent and parent.get("camera") != null:
 			_camera = parent.camera
@@ -126,6 +146,9 @@ func _process(_delta: float) -> void:
 			_camera = get_viewport().get_camera_2d()
 		if not is_instance_valid(_camera):
 			return
+	# 粒子跟摄像机，营造漂浮感
+	if is_instance_valid(_parallax_particles):
+		_parallax_particles.global_position = _camera.global_position
 	_update_tiles()
 
 func _update_tiles() -> void:

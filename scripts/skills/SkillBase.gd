@@ -21,6 +21,16 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if data == null: return  # 编辑器预览时 data 未注入则跳过
+	# 主动技能：等待按键输入
+	if data.is_active:
+		cooldown_timer -= delta
+		var action = "skill_q" if data.active_slot == 0 else "skill_e"
+		if Input.is_action_just_pressed(action) and cooldown_timer <= 0:
+			var current_cooldown = data.cooldown + data.level_up_cooldown * (level - 1)
+			cooldown_timer = max(current_cooldown, 0.1)
+			activate()
+		return
+	# 自动技能：倒计时自动触发
 	cooldown_timer -= delta
 	if cooldown_timer <= 0:
 		var current_cooldown = data.cooldown + data.level_up_cooldown * (level - 1)
@@ -28,6 +38,9 @@ func _process(delta: float) -> void:
 		activate()
 
 func activate() -> void:
+	# 施法动画：通知 player 播放 cast 动画
+	if is_instance_valid(owner_player) and owner_player.has_method("play_cast_anim"):
+		owner_player.play_cast_anim()
 	# 子类重写此方法实现具体攻击逻辑
 	pass
 
@@ -54,12 +67,20 @@ func calc_damage(base_dmg: float = -1.0) -> Array:
 		dmg *= crit_mult
 	return [dmg, is_crit]
 
-# 对单个敌人造成伤害（自动含暴击）
+# 对单个敌人造成伤害（自动含暴击+分级音效，#5）
 func deal_damage(enemy: Node, base_dmg: float = -1.0) -> void:
-	if not is_instance_valid(enemy):
-		return
+	if not is_instance_valid(enemy): return
 	var result = calc_damage(base_dmg)
-	enemy.take_damage(result[0], result[1])
+	var final_dmg: float = result[0]
+	var is_crit: bool = result[1]
+	enemy.take_damage(final_dmg, is_crit)
+	# 分级音效
+	var snd = get_tree().get_first_node_in_group("sound_manager")
+	if snd:
+		if is_crit:
+			snd.play_crit(final_dmg)
+		else:
+			snd.play_hit(final_dmg)
 
 func can_evolve(passive_ids: Array) -> bool:
 	return data.evolve_passive_id != "" and data.evolve_passive_id in passive_ids
@@ -70,16 +91,28 @@ func _get_enemies() -> Array:
 		return spawn_root.get_children().filter(func(n): return n.is_in_group("enemies"))
 	return get_tree().get_nodes_in_group("enemies")
 
-# 找最近的敌人
+# 找最近的敌人（支持瞄准优先级：精英>低血>最近，#14）
 func get_nearest_enemy() -> Node2D:
 	var enemies = _get_enemies()
+	if enemies.is_empty(): return null
+	# 优先精英
+	var elites = enemies.filter(func(e): return e.data and e.data.get("is_elite", false))
+	if not elites.is_empty():
+		elites.sort_custom(func(a,b): return global_position.distance_to(a.global_position) < global_position.distance_to(b.global_position))
+		return elites[0]
+	# 次优先：血量最低
+	var lowest = enemies[0]
+	for e in enemies:
+		if e.hp < lowest.hp: lowest = e
+	# 如果最低血量敌人比最近敌人近2倍以上，优先打最近
 	var nearest: Node2D = null
 	var min_dist = INF
 	for e in enemies:
 		var d = global_position.distance_to(e.global_position)
-		if d < min_dist:
-			min_dist = d
-			nearest = e
+		if d < min_dist: min_dist = d; nearest = e
+	var dist_lowest = global_position.distance_to(lowest.global_position)
+	if dist_lowest < min_dist * 2.0:
+		return lowest
 	return nearest
 
 # 找范围内所有敌人

@@ -36,6 +36,7 @@ signal boss_died
 # UI
 signal show_level_up_panel(choices: Array)
 signal upgrade_chosen(choice: Dictionary)
+signal upgrade_panel_closed   # 升级面板完全关闭（5选2全部选完）
 
 # 成就/每日挑战相关
 signal gem_collected(amount: int)
@@ -45,3 +46,6 @@ signal damage_dealt(position: Vector2, amount: int, color: Color)
 # 遗物系统
 signal relic_drop_touched(choices: Array)
 signal relic_collected(relic_id: String)
+
+# 技能协同系统（#17）
+signal synergy_activated(synergy: Dictionary)
