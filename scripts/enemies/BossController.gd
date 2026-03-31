@@ -1,21 +1,23 @@
 # BossController.gd
 # Boss三阶段控制（#23）— 附加到 Boss 敌人节点上
-# 阶段：HP>66% 普通 → HP>33% 狂暴 → HP<33% 死亡倒计时
+# 阶段：HP>66% 普通 → HP>33% 狂暴 → HP<33% 濒死狂怒
 extends Node
 
 enum Phase { NORMAL, BERSERK, DYING }
 var phase: Phase = Phase.NORMAL
 
-var _boss: Node = null  # 宿主 EnemyBase
-var _phase_banner_shown := {Phase.BERSERK: false, Phase.DYING: false}
+var _boss: Node = null
+var _boss_max_hp: float = 1.0  # EnemyBase 无 max_hp，启动时记录初始值
 
 func _ready() -> void:
 	_boss = get_parent()
+	await get_tree().process_frame
+	if is_instance_valid(_boss):
+		_boss_max_hp = max(_boss.hp, 1.0)
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_boss) or _boss.is_dead: return
-	var hp_ratio = float(_boss.hp) / float(_boss.max_hp)
-
+	var hp_ratio = float(_boss.hp) / _boss_max_hp
 	match phase:
 		Phase.NORMAL:
 			if hp_ratio <= 0.66:
@@ -26,30 +28,30 @@ func _process(_delta: float) -> void:
 
 func _enter_berserk() -> void:
 	phase = Phase.BERSERK
-	# 速度 +40%，攻击间隔 -30%
 	_boss.base_move_speed *= 1.4
 	_boss.attack_interval *= 0.7
-	# 视觉：变红色
 	if _boss.visual:
 		_boss.visual.modulate = Color(1.0, 0.3, 0.3)
-	# 屏幕震动
-	EventBus.emit_signal("screen_shake", 0.4, 8.0)
+	_do_shake(8.0)
 	_show_phase_banner("⚡ Boss 进入狂暴状态！", Color(1.0, 0.4, 0.1))
 
 func _enter_dying() -> void:
 	phase = Phase.DYING
-	# 最终阶段：乱射投射物 + 速度极快
 	_boss.base_move_speed *= 1.6
 	_boss.attack_interval *= 0.5
 	if _boss.visual:
 		_boss.visual.modulate = Color(0.6, 0.1, 1.0)
-		# 持续颤抖效果
 		var tween = _boss.create_tween().set_loops()
 		tween.tween_property(_boss.visual, "position", Vector2(3, 0), 0.04)
 		tween.tween_property(_boss.visual, "position", Vector2(-3, 0), 0.04)
 		tween.tween_property(_boss.visual, "position", Vector2.ZERO, 0.04)
-	EventBus.emit_signal("screen_shake", 0.6, 12.0)
+	_do_shake(12.0)
 	_show_phase_banner("💀 Boss 濒死狂怒！", Color(0.8, 0.1, 1.0))
+
+func _do_shake(amount: float) -> void:
+	var ss = get_tree().root.find_child("ScreenShake", true, false)
+	if ss and ss.has_method("start"):
+		ss.start(amount)
 
 func _show_phase_banner(text: String, color: Color) -> void:
 	var hud = get_tree().root.find_child("HUDLayer", true, false)
