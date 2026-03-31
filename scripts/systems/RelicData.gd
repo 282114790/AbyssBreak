@@ -50,9 +50,9 @@ func apply_to_player(p: Node) -> void:
 	if exp_mult != 1.0:
 		p.exp_multiplier *= exp_mult
 	if crit_chance != 0.0:
-		p.crit_chance = p.get("crit_chance", 0.0) + crit_chance
+		p.crit_chance = p.crit_chance + crit_chance
 	if crit_mult != 1.0:
-		p.crit_mult = p.get("crit_mult", 1.5) * crit_mult
+		p.crit_mult = p.crit_mult * crit_mult
 	if dodge_recharge != 0.0:
 		p.DODGE_COOLDOWN = max(0.2, p.DODGE_COOLDOWN - dodge_recharge)
 	EventBus.emit_signal("player_damaged", p.current_hp, p.max_hp)
