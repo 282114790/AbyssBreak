@@ -3,31 +3,31 @@ id,category,priority,title,detail,status,note
 2,打击感,P0,伤害数字分级显示,普通伤害白色/暴击黄色+放大，弹出后上飘消失，字体加粗,DONE,DamageNumber.gd已实现暴击判断+颜色分级
 3,打击感,P1,屏幕微震（HitStop）,技能命中/敌人死亡时屏幕震动0.1-0.15s，增强爆炸感,DONE,ScreenShake.gd已实现并在Main.gd接入
 4,打击感,P1,死亡粒子爆散,敌人死亡时播放颜色匹配的粒子爆散特效,DONE,DeathEffect.gd已实现三波粒子（冲击波/火星/烟雾）
-5,打击感,P2,音效层级分离,普通攻击/技能/暴击/死亡各用独立音效，音量与伤害量正相关,DONE,SoundManager.gd存在但音效资源需检查和丰富
-6,表现,P0,施法动画,角色施放技能时播放专属动作帧（抬手/后摇），消除割裂感,DONE,Player.gd只有walk动画无施法帧
-7,表现,P1,视差背景层,远景（天空/山脉）移动速度比地面慢0.3-0.5倍，增加画面纵深感,DONE,TileMapBackground无视差层
-8,表现,P1,敌人个性化外观,不同敌人有明显轮廓差异和颜色区分，高等级敌人有特殊光效,DONE,
-9,表现,P2,技能图标动态效果,冷却CD旋转遮罩+就绪时脉冲闪光，技能状态一眼可读,DONE,
-10,表现,P2,环境动态元素,背景加漂浮粒子（dust/魔法粒子）、摇曳的火把，让场景活起来,DONE,TileMapBackground有Layer5火把但无漂浮粒子
-11,操作/手感,P0,翻滚/闪避,短距离翻滚（有无敌帧），给走位赋予技巧性，是roguelite操作乐趣核心,DONE,Player.gd完全未实现
-12,操作/手感,P0,主动技能槽位,玩家可手动绑定1-2个技能到按键（Q/E或Space），增加主动操作深度,DONE,目前技能全自动触发
-13,操作/手感,P1,移动速度感知优化,加速/减速有轻微惯性，脚步粒子/残影让速度感更明显,DONE,
-14,操作/手感,P1,自动瞄准白名单,技能优先攻击血量最低/最近/精英敌人，可在设置切换,DONE,
-15,系统/成长,P0,装备/遗物系统,每X波掉落遗物（被动效果道具），提供Build多样性，roguelite留存核心,DONE,MetaProgress.gd存在但遗物掉落机制未实现
-16,系统/成长,P0,升级选择扩展,升级时从5个选项里选2个（含诅咒选项：风险换高收益）,DONE,
-17,系统/成长,P1,技能协同提示,同时拥有相性好的技能时显示连携提示+特效，强化组合玩法意识,DONE,
-18,系统/成长,P1,精英/Boss变体,每种敌人有精英版本（更大/不同颜色/额外技能），精英死亡必掉遗物,DONE,
-19,系统/成长,P2,元进度（魂石解锁）,每局结束后魂石可永久解锁角色/起始遗物/关卡选项,DONE,MetaProgress.gd框架存在待接入
-20,系统/成长,P2,每局Build显示,结算界面展示本局完整Build（技能+遗物+最高伤害），可截图分享,DONE,
-21,节奏/关卡,P0,波次节奏重设计,改为小波→精英波→喘息期→Boss波节奏，制造压迫感高潮,DONE,WaveManager.gd需检查
-22,节奏/关卡,P0,30秒必有事件,每30秒发生一件事：新敌种/精英出现/遗物掉落/环境变化,DONE,
-23,节奏/关卡,P1,Boss战设计,Boss应有3阶段+独特技能，死亡时有仪式感,DONE,
-24,节奏/关卡,P1,关卡选择地图,每局开始时选择3条不同路线（遗物路/战斗路/商人路）,DONE,
-25,节奏/关卡,P2,商人系统,每X波出现商人，可用魂石购买遗物/技能升级/满血,DONE,
-26,节奏/关卡,P2,随机事件,行进途中触发文字事件（收益/风险二选一），增加叙事感,DONE,
-27,UI/UX,P1,死亡界面优化,死亡时慢镜头+屏幕变灰+展示差一点就过了统计，降低挫败感,DONE,
-28,UI/UX,P1,暂停菜单完善,暂停时可查看当前Build详情（技能等级/遗物效果），减少困惑,DONE,
-29,UI/UX,P2,新手引导,第一局强制引导：移动→第一次升级→技能施放→击败第一个精英,DONE,
-30,UI/UX,P2,多语言/本地化准备,所有UI文本集中到locale文件，方便后期中英文切换,DONE,
-31,技术/性能,P1,对象池（Object Pool）,投射物/粒子/伤害数字全部走对象池，消除大量敌人时卡顿,DONE,
-32,技术/性能,P2,LOD敌人,屏幕边缘敌人降低update频率（每3帧1次），减少CPU占用,DONE,
+5,打击感,P2,音效层级分离,普通攻击/技能/暴击/死亡各用独立音效，音量与伤害量正相关,DONE,SoundManager重写：4总线(Normal/Skill/Crit/Death)+音量与伤害正相关
+6,表现,P0,施法动画,角色施放技能时播放专属动作帧（抬手/后摇），消除割裂感,DONE,Player._setup_visual加cast动画帧，SkillBase.activate()触发play_cast_anim()
+7,表现,P1,视差背景层,远景（天空/山脉）移动速度比地面慢0.3-0.5倍，增加画面纵深感,DONE,TileMapBackground._setup_ambient_particles()漂浮粒子跟摄像机
+8,表现,P1,敌人个性化外观,不同敌人有明显轮廓差异和颜色区分，高等级敌人有特殊光效,DONE,EnemyBase._apply_enemy_style()：精英橙色光晕+1.3x缩放，Boss紫色脉冲
+9,表现,P2,技能图标动态效果,冷却CD旋转遮罩+就绪时脉冲闪光，技能状态一眼可读,DONE,Main.gd槽位加CdBar(ProgressBar)+ReadyFlash，_update_skill_cd()每帧更新
+10,表现,P2,环境动态元素,背景加漂浮粒子（dust/魔法粒子）、摇曳的火把，让场景活起来,DONE,TileMapBackground CPUParticles2D 35颗漂浮魔法粒子
+11,操作/手感,P0,翻滚/闪避,短距离翻滚（有无敌帧），给走位赋予技巧性，是roguelite操作乐趣核心,DONE,Player.gd：Space键翻滚，无敌帧0.25s，残影效果，冷却0.7s
+12,操作/手感,P0,主动技能槽位,玩家可手动绑定1-2个技能到按键（Q/E或Space），增加主动操作深度,DONE,SkillData.is_active+active_slot，Q=虚空裂缝 E=时间减速，SkillBase._process处理
+13,操作/手感,P1,移动速度感知优化,加速/减速有轻微惯性，脚步粒子/残影让速度感更明显,DONE,Player._handle_movement加lerp惯性(18/22系数)+CPUParticles2D脚步粒子
+14,操作/手感,P1,自动瞄准白名单,技能优先攻击血量最低/最近/精英敌人，可在设置切换,DONE,SkillBase.get_nearest_enemy()：精英>低血量>最近三级优先
+15,系统/成长,P0,装备/遗物系统,每X波掉落遗物（被动效果道具），提供Build多样性，roguelite留存核心,DONE,RelicData/RelicDrop/RelicSelectPanel/RelicRegistry全套，每3波掉落
+16,系统/成长,P0,升级选择扩展,升级时从5个选项里选2个（含诅咒选项：风险换高收益）,DONE,UpgradeSystem 5选2+4种诅咒（生命诅咒/速度诅咒/CD诅咒/再生诅咒），HUD分两轮
+17,系统/成长,P1,技能协同提示,同时拥有相性好的技能时显示连携提示+特效，强化组合玩法意识,DONE,SynergySystem.gd 6种协同+EventBus.synergy_activated信号+HUD提示
+18,系统/成长,P1,精英/Boss变体,每种敌人有精英版本（更大/不同颜色/额外技能），精英死亡必掉遗物,DONE,EnemyBase+BossController：精英死必掉遗物，Main._drop_relic_at()
+19,系统/成长,P2,元进度（魂石解锁）,每局结束后魂石可永久解锁角色/起始遗物/关卡选项,DONE,MetaProgress.on_run_ended()已在RunResultScreen调用，魂石结算正常
+20,系统/成长,P2,每局Build显示,结算界面展示本局完整Build（技能+遗物+最高伤害），可截图分享,DONE,RunResultScreen._build_ui()加技能/遗物/诅咒Build展示区块
+21,节奏/关卡,P0,波次节奏重设计,改为小波→精英波→喘息期→Boss波节奏，制造压迫感高潮,DONE,WaveManager SMALL→ELITE→REST→BOSS四状态机，HUD精英波警告
+22,节奏/关卡,P0,30秒必有事件,每30秒发生一件事：新敌种/精英出现/遗物掉落/环境变化,DONE,Main._tick_thirty_second_events：精英刷新/遗物掉落/治疗气泡/环境特效4事件轮转
+23,节奏/关卡,P1,Boss战设计,Boss应有3阶段+独特技能，死亡时有仪式感,DONE,BossController.gd三阶段：NORMAL→BERSERK(速度1.4x)→DYING(速度1.6x+颤抖)
+24,节奏/关卡,P1,关卡选择地图,每局开始时选择3条不同路线（遗物路/战斗路/商人路）,DONE,RouteSelectScreen.gd三路线(遗物/鲜血/商旅)，Main._start_game前弹出
+25,节奏/关卡,P2,商人系统,每X波出现商人，可用魂石购买遗物/技能升级/满血,DONE,MerchantSystem.gd每5波出现，4种商品(回血/技能升/遗物/护盾)
+26,节奏/关卡,P2,随机事件,行进途中触发文字事件（收益/风险二选一），增加叙事感,DONE,RandomEventSystem.gd 4种事件每90s触发，二选一文字事件
+27,UI/UX,P1,死亡界面优化,死亡时慢镜头+屏幕变灰+展示差一点就过了统计，降低挫败感,DONE,Main._on_player_died：Engine.time_scale lerp到0.15+屏幕灰色渐变
+28,UI/UX,P1,暂停菜单完善,暂停时可查看当前Build详情（技能等级/遗物效果），减少困惑,DONE,Main._toggle_pause_menu()：ESC/P打开，技能等级+遗物+诅咒完整Build
+29,UI/UX,P2,新手引导,第一局强制引导：移动→第一次升级→技能施放→击败第一个精英,DONE,TutorialSystem.gd 4步引导(移动→升级→施法→精英)，仅第一局触发
+30,UI/UX,P2,多语言/本地化准备,所有UI文本集中到locale文件，方便后期中英文切换,DONE,Locale.gd AutoLoad，t(key)接口，zh_CN/en_US双语，80+条文本
+31,技术/性能,P1,对象池（Object Pool）,投射物/粒子/伤害数字全部走对象池，消除大量敌人时卡顿,DONE,ObjectPool.gd：get_obj/release/prewarm，Projectile._return_to_pool()复用
+32,技术/性能,P2,LOD敌人,屏幕边缘敌人降低update频率（每3帧1次），减少CPU占用,DONE,EnemyBase._is_on_screen()检测+_lod_frame计数，屏外每3帧更新一次
