@@ -148,7 +148,7 @@ func _show_upgrade_panel(choices: Array) -> void:
 	_rebuild_choice_buttons()
 
 func _rebuild_choice_buttons() -> void:
-	for child in choice_buttons.get_children(): child.free()
+	for child in choice_buttons.get_children(): child.queue_free()
 
 	# 标题更新
 	var ptitle = level_up_panel.get_child(0) if level_up_panel.get_child_count() > 0 else null
