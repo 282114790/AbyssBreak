@@ -99,8 +99,8 @@ func _buy(player: Node, meta: Node, action: String, cost: int, soul_lbl: Label) 
 	soul_lbl.text = "💎 当前魂石：%d" % meta.soul_stones
 	match action:
 		"heal_full":
-			player.hp = player.max_hp
-			EventBus.emit_signal("player_hp_changed", player.hp, player.max_hp)
+			player.current_hp = player.max_hp
+			EventBus.emit_signal("player_hp_changed", player.current_hp, player.max_hp)
 		"skill_up":
 			if not player.skills.is_empty():
 				var sk = player.skills[randi() % player.skills.size()]
@@ -112,8 +112,8 @@ func _buy(player: Node, meta: Node, action: String, cost: int, soul_lbl: Label) 
 				choices[0].apply_to_player(player)
 		"shield":
 			player.max_hp = int(player.max_hp * 1.2)
-			player.hp = min(player.hp + int(player.max_hp * 0.2), player.max_hp)
-			EventBus.emit_signal("player_hp_changed", player.hp, player.max_hp)
+			player.current_hp = min(player.current_hp + int(player.max_hp * 0.2), player.max_hp)
+			EventBus.emit_signal("player_hp_changed", player.current_hp, player.max_hp)
 
 func _close_merchant() -> void:
 	if is_instance_valid(_panel): _panel.queue_free()

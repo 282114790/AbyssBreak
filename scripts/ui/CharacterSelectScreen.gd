@@ -144,33 +144,91 @@ func _build_ui() -> void:
 		dc_desc.offset_bottom = -80
 		add_child(dc_desc)
 
-func _make_card(char_data: Resource, unlocked: bool) -> PanelContainer:
-	var card = PanelContainer.new()
+func _make_card(char_data: Resource, unlocked: bool) -> Button:
+	# 整张卡片改为 Button，这样全区域都可以点击
+	var card = Button.new()
 	card.custom_minimum_size = Vector2(220, 300)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	card.focus_mode = Control.FOCUS_NONE
 
+	# 卡片样式
+	var is_selected = unlocked and char_data.id == _selected_id
+	var style_normal = StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.10, 0.10, 0.22)
+	style_normal.corner_radius_top_left    = 8
+	style_normal.corner_radius_top_right   = 8
+	style_normal.corner_radius_bottom_left = 8
+	style_normal.corner_radius_bottom_right = 8
+	if is_selected:
+		style_normal.border_color = Color(1.0, 0.88, 0.2)
+		style_normal.border_width_left   = 3
+		style_normal.border_width_right  = 3
+		style_normal.border_width_top    = 3
+		style_normal.border_width_bottom = 3
+		style_normal.bg_color = Color(0.14, 0.13, 0.28)
+
+	# hover 样式：边框变亮
+	var style_hover = style_normal.duplicate()
+	style_hover.bg_color = Color(0.16, 0.15, 0.32)
+	if not is_selected:
+		style_hover.border_color = Color(0.7, 0.7, 0.9, 0.6)
+		style_hover.border_width_left   = 2
+		style_hover.border_width_right  = 2
+		style_hover.border_width_top    = 2
+		style_hover.border_width_bottom = 2
+
+	card.add_theme_stylebox_override("normal",   style_normal)
+	card.add_theme_stylebox_override("hover",    style_hover)
+	card.add_theme_stylebox_override("pressed",  style_hover)
+	card.add_theme_stylebox_override("focus",    style_normal)
+	card.add_theme_stylebox_override("disabled", style_normal)
+
+	if not unlocked:
+		card.disabled = true
+	else:
+		card.pressed.connect(func():
+			_selected_id = char_data.id
+			_build_ui()
+		)
+
+	# 内容布局：SIZE_EXPAND_FILL 撑满 Button 宽度
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(vbox)
 
-	# 头像区域（临时：大emoji + 背景色块）
-	var avatar_bg = ColorRect.new()
-	avatar_bg.color = char_data.icon_color if unlocked else Color(0.2, 0.2, 0.2)
-	avatar_bg.custom_minimum_size = Vector2(200, 120)
-	vbox.add_child(avatar_bg)
+	# 头像区域：用 Control 自绘背景色，emoji Label 锚点居中
+	var avatar_ctrl = Control.new()
+	avatar_ctrl.custom_minimum_size = Vector2(0, 130)
+	avatar_ctrl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	avatar_ctrl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var avatar_color = char_data.icon_color if unlocked else Color(0.2, 0.2, 0.2)
+	# 用 draw 回调绘制纯色背景（不受 padding 影响）
+	avatar_ctrl.draw.connect(func():
+		avatar_ctrl.draw_rect(Rect2(Vector2.ZERO, avatar_ctrl.size), avatar_color)
+	)
+	avatar_ctrl.resized.connect(func(): avatar_ctrl.queue_redraw())
+	vbox.add_child(avatar_ctrl)
 
 	var avatar_lbl = Label.new()
 	avatar_lbl.text = char_data.icon_emoji if unlocked else "🔒"
-	avatar_lbl.add_theme_font_size_override("font_size", 56)
+	avatar_lbl.add_theme_font_size_override("font_size", 72)
 	avatar_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# 叠加在色块上
-	avatar_bg.add_child(avatar_lbl)
-	avatar_lbl.set_anchors_preset(Control.PRESET_CENTER)
+	avatar_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	avatar_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	avatar_ctrl.add_child(avatar_lbl)
 
 	# 名称
 	var name_lbl = Label.new()
 	name_lbl.text = char_data.display_name if unlocked else "???"
 	name_lbl.add_theme_font_size_override("font_size", 20)
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(name_lbl)
 
 	# 特性
@@ -179,6 +237,7 @@ func _make_card(char_data: Resource, unlocked: bool) -> PanelContainer:
 	trait_lbl.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6) if unlocked else Color(0.5, 0.5, 0.5))
 	trait_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	trait_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	trait_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(trait_lbl)
 
 	# 描述
@@ -187,27 +246,9 @@ func _make_card(char_data: Resource, unlocked: bool) -> PanelContainer:
 	desc_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(desc_lbl)
 
-	# 选择按钮
-	if unlocked:
-		var btn = Button.new()
-		btn.text = "✅ 已选择" if char_data.id == _selected_id else "选择"
-		btn.pressed.connect(func():
-			_selected_id = char_data.id
-			_build_ui()   # 刷新高亮
-		)
-		vbox.add_child(btn)
-
-		# 高亮选中边框
-		if char_data.id == _selected_id:
-			var style = StyleBoxFlat.new()
-			style.border_color = Color(1.0, 0.9, 0.2)
-			style.border_width_left = 3
-			style.border_width_right = 3
-			style.border_width_top = 3
-			style.border_width_bottom = 3
-			style.bg_color = Color(0.12, 0.12, 0.25)
-			card.add_theme_stylebox_override("panel", style)
+	# （无底部状态文字）
 
 	return card

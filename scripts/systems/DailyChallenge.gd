@@ -87,7 +87,7 @@ func apply_modifier(modifier_type: int, player: Node, wave_manager: Node) -> voi
 			if player:
 				if player.get("max_hp") != null:
 					player.max_hp = max(1.0, player.max_hp * 0.5)
-					player.hp = min(player.hp, player.max_hp)
+					player.current_hp = min(player.current_hp, player.max_hp)
 				if player.get("damage_multiplier") != null:
 					player.damage_multiplier *= 1.5
 		2:  # 魔力枯竭：所有技能冷却×2

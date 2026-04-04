@@ -1,25 +1,32 @@
 extends Node2D
 
 # ============================================================
-#  深渊突围 — 分层背景系统 v2
+#  深渊突围 — 分层背景系统 v3
+#  优化：NEAREST filter / 火把 PointLight2D / 粒子配色修正
 #  map_theme: "dungeon"(默认) | "ice" | "lava"
 # ============================================================
 
 # 地图主题（由 Main.gd 在初始化前设置）
 var map_theme: String = "dungeon"
 
-const TILE_PX    := 16
-const SCALE_F    := 4.0
+const TILE_PX    := 64
+const SCALE_F    := 1.0
 const DISPLAY    := TILE_PX * SCALE_F   # 64px
 const WORLD_HALF := 8000.0   # 足够大，玩家基本跑不到边界
 
 const ROOM_TILES := 16
 const ROOM_SIZE  := DISPLAY * ROOM_TILES
 
-# Layer 1 —— floor_layer1.png（8tile横排，每tile16px）
-const FLOOR_TILE_COUNT : int = 8
-const FLOOR_TILE_PX    : int = 16
-const FLOOR_WEIGHTS : Array[int] = [5, 5, 5, 5, 2, 2, 2, 2]
+# Layer 1 —— floor_layer1.png（20tile横排，每tile16px）
+# tile排列：[0,1]=普通石砖, [2-4]=苔藓石砖, [5-9]=符文(row0), [10-14]=符文(row1-2), [15-19]=符文(row3)
+const FLOOR_TILE_COUNT : int = 20
+const FLOOR_TILE_PX    : int = 64
+const FLOOR_WEIGHTS : Array[int] = [
+	1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1
+]
 
 # Layer 2
 const DETAIL_TILE_COUNT := 6
@@ -79,21 +86,27 @@ func _ready() -> void:
 		_draw_room_grid()
 
 func _setup_ambient_particles() -> void:
-	# #10 漂浮魔法粒子 — 跟随场景漂浮，营造地牢氛围
+	# #10 漂浮魔法粒子 — 地牢氛围：魔法紫 + 橙焰双色混合
 	var p = CPUParticles2D.new()
-	p.amount = 35
-	p.lifetime = 5.0
+	p.amount = 40
+	p.lifetime = 6.0
 	p.explosiveness = 0.0
 	p.randomness = 1.0
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	p.emission_rect_extents = Vector2(800, 450)
-	p.direction = Vector2(0.15, -1.0)
-	p.spread = 20.0
-	p.initial_velocity_min = 6.0
-	p.initial_velocity_max = 18.0
+	p.direction = Vector2(0.1, -1.0)
+	p.spread = 25.0
+	p.initial_velocity_min = 5.0
+	p.initial_velocity_max = 20.0
 	p.scale_amount_min = 1.0
-	p.scale_amount_max = 3.5
-	p.color = Color(0.35, 0.5, 0.9, 0.25)
+	p.scale_amount_max = 3.0
+	# 渐变：生成时偏紫，消逝时偏橙（配合火把氛围）
+	var gradient := Gradient.new()
+	gradient.add_point(0.0, Color(0.65, 0.25, 0.9, 0.0))   # 紫色淡入
+	gradient.add_point(0.2, Color(0.65, 0.25, 0.9, 0.22))  # 紫色峰值
+	gradient.add_point(0.7, Color(0.9, 0.55, 0.2, 0.18))   # 过渡到橙
+	gradient.add_point(1.0, Color(0.9, 0.55, 0.2, 0.0))    # 橙色淡出
+	p.color_ramp = gradient
 	p.z_index = -5
 	add_child(p)
 	_parallax_particles = p
@@ -297,6 +310,17 @@ func _place_torch(sp: AnimatedSprite2D, wx: float, wy: float) -> void:
 	sp.z_index = -6
 	sp.modulate = Color(1.0, 0.85, 0.6, 0.9)
 	sp.play()
+	# PointLight2D —— 若还没有则创建并挂到火把上
+	if sp.get_node_or_null("TorchLight") == null:
+		var light := PointLight2D.new()
+		light.name = "TorchLight"
+		light.texture = _get_light_texture()
+		light.color = Color(1.0, 0.72, 0.3, 1.0)   # 暖橙黄
+		light.energy = 1.2
+		light.texture_scale = 3.0   # 半径约 ~280px，光圈更大更明显
+		light.shadow_enabled = false
+		light.z_index = -6
+		sp.add_child(light)
 
 # ── Layer 3：房间网格（静态）─────────────────────────
 func _draw_room_grid() -> void:
@@ -337,12 +361,34 @@ func _make_multiply_material() -> CanvasItemMaterial:
 		_multiply_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
 	return _multiply_mat
 
+# ── PointLight2D 径向渐变纹理缓存 ────────────────────
+var _light_tex : ImageTexture = null
+func _get_light_texture() -> ImageTexture:
+	if _light_tex != null:
+		return _light_tex
+	# 程序化生成 64×64 径向白→透渐变（PointLight2D 标准格式）
+	const SZ := 64
+	var img := Image.create(SZ, SZ, false, Image.FORMAT_RGBA8)
+	var center := Vector2(SZ * 0.5, SZ * 0.5)
+	for y in range(SZ):
+		for x in range(SZ):
+			var dist := Vector2(x, y).distance_to(center) / (SZ * 0.5)
+			var alpha := clampf(1.0 - dist, 0.0, 1.0)
+			alpha = alpha * alpha  # 二次衰减，更自然
+			img.set_pixel(x, y, Color(1, 1, 1, alpha))
+	_light_tex = ImageTexture.create_from_image(img)
+	return _light_tex
+
 # ── 对象池：地板 ──────────────────────────────────────
 func _get_floor_sprite() -> Sprite2D:
 	if _floor_pool.size() > 0:
 		var sp : Sprite2D = _floor_pool.pop_back()
 		sp.visible = true; return sp
-	var sp := Sprite2D.new(); sp.centered = true; add_child(sp); return sp
+	var sp := Sprite2D.new()
+	sp.centered = true
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(sp)
+	return sp
 
 func _return_floor(sp: Sprite2D) -> void:
 	sp.visible = false; _floor_pool.append(sp)
@@ -352,7 +398,11 @@ func _get_detail_sprite() -> Sprite2D:
 	if _detail_pool.size() > 0:
 		var sp : Sprite2D = _detail_pool.pop_back()
 		sp.visible = true; return sp
-	var sp := Sprite2D.new(); sp.centered = true; add_child(sp); return sp
+	var sp := Sprite2D.new()
+	sp.centered = true
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(sp)
+	return sp
 
 func _return_detail(sp: Sprite2D) -> void:
 	sp.visible = false; _detail_pool.append(sp)
@@ -362,7 +412,11 @@ func _get_deco_sprite() -> Sprite2D:
 	if _deco_pool.size() > 0:
 		var sp : Sprite2D = _deco_pool.pop_back()
 		sp.visible = true; return sp
-	var sp := Sprite2D.new(); sp.centered = true; add_child(sp); return sp
+	var sp := Sprite2D.new()
+	sp.centered = true
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(sp)
+	return sp
 
 func _return_deco(sp: Sprite2D) -> void:
 	sp.visible = false; _deco_pool.append(sp)
@@ -372,7 +426,11 @@ func _get_torch_sprite() -> AnimatedSprite2D:
 	if _torch_pool.size() > 0:
 		var sp : AnimatedSprite2D = _torch_pool.pop_back()
 		sp.visible = true; sp.play(); return sp
-	var sp := AnimatedSprite2D.new(); sp.centered = true; add_child(sp); return sp
+	var sp := AnimatedSprite2D.new()
+	sp.centered = true
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(sp)
+	return sp
 
 func _return_torch(sp: AnimatedSprite2D) -> void:
 	sp.stop(); sp.visible = false; _torch_pool.append(sp)

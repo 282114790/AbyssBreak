@@ -15,9 +15,9 @@ func activate() -> void:
 func _spend_hp_and_blast() -> void:
 	var lv = level if data else 1
 	# 消耗HP
-	var cost = owner_player.hp * HP_COST_RATIO
+	var cost = owner_player.current_hp * HP_COST_RATIO
 	cost = max(cost, 1.0)
-	owner_player.hp -= cost
+	owner_player.take_damage(cost)  # 用 take_damage 保证触发受伤逻辑（血条更新等）
 
 	# 爆发圆圈
 	var nova = Node2D.new()

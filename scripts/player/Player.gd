@@ -123,7 +123,7 @@ func _setup_visual() -> void:
 
 	frames.add_animation("walk")
 	frames.set_animation_loop("walk", true)
-	frames.set_animation_speed("walk", 8.0)
+	frames.set_animation_speed("walk", 12.0)  # 8→12fps，更流畅
 	for i in range(frame_count):
 		var atlas = AtlasTexture.new()
 		atlas.atlas = tex
@@ -133,12 +133,14 @@ func _setup_visual() -> void:
 
 	frames.add_animation("idle")
 	frames.set_animation_loop("idle", true)
-	frames.set_animation_speed("idle", 5.0)
-	var idle_atlas = AtlasTexture.new()
-	idle_atlas.atlas = tex
-	idle_atlas.region = Rect2(0, 0, frame_w, frame_h)
-	idle_atlas.margin = Rect2(2, 2, -4, -4)
-	frames.add_frame("idle", idle_atlas)
+	frames.set_animation_speed("idle", 6.0)
+	# idle 用前3帧做轻微呼吸摆动（0→1→2→1 循环）
+	for idx in [0, 1, 2, 1]:
+		var idle_atlas = AtlasTexture.new()
+		idle_atlas.atlas = tex
+		idle_atlas.region = Rect2(min(idx, frame_count - 1) * frame_w, 0, frame_w, frame_h)
+		idle_atlas.margin = Rect2(2, 2, -4, -4)
+		frames.add_frame("idle", idle_atlas)
 
 	anim_sprite.sprite_frames = frames
 	add_child(anim_sprite)
@@ -156,6 +158,8 @@ func _setup_visual() -> void:
 		catlas.margin = Rect2(2, 2, -4, -4)
 		frames.add_frame("cast", catlas)
 	visual.animation_finished.connect(_on_anim_finished)
+	# 启动待机呼吸浮动
+	_start_idle_breath()
 
 	# 描边轮廓 shader
 	var shader_mat = ShaderMaterial.new()
@@ -177,7 +181,28 @@ func _setup_visual() -> void:
 
 func _on_anim_finished() -> void:
 	if visual and visual.animation == "cast":
+		# cast 结束时做一个小弹出感（scale 1.0 → 1.12 → 1.0）
+		var base_scale = visual.scale
+		var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		tween.tween_property(visual, "scale", base_scale * 1.12, 0.06)
+		tween.tween_property(visual, "scale", base_scale, 0.08)
 		visual.play("idle")
+
+# 待机呼吸浮动：循环 Tween，上下 3px + 轻微缩放
+var _breath_tween: Tween = null
+var _breath_base_y: float = 0.0
+
+func _start_idle_breath() -> void:
+	_breath_base_y = visual.position.y
+	_run_breath_cycle()
+
+func _run_breath_cycle() -> void:
+	if not is_instance_valid(visual):
+		return
+	_breath_tween = create_tween().set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_breath_tween.tween_property(visual, "position:y", _breath_base_y - 3.0, 0.6)
+	_breath_tween.tween_property(visual, "position:y", _breath_base_y, 0.6)
+	_breath_tween.tween_callback(_run_breath_cycle)
 
 # 供 SkillBase 调用：播放施法动画
 func play_cast_anim() -> void:
@@ -233,6 +258,10 @@ func _start_dodge() -> void:
 	_afterimage_timer = 0.0
 	dodge_cooldown_timer = DODGE_COOLDOWN
 
+	# 翻滚时暂停呼吸偏移，复位 Y
+	if _breath_tween: _breath_tween.kill()
+	if visual: visual.position.y = _breath_base_y
+
 	# 视觉：半透明表示无敌
 	if visual:
 		visual.modulate = Color(1.0, 1.0, 1.0, 0.45)
@@ -247,6 +276,8 @@ func _end_dodge() -> void:
 	dodge_invincible = false
 	if visual:
 		visual.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	# 翻滚结束，重启呼吸
+	_run_breath_cycle()
 
 func _spawn_afterimage() -> void:
 	if visual == null:
@@ -369,6 +400,10 @@ func take_damage(dmg: float) -> void:
 		visual.modulate = Color(2.0, 2.0, 2.0)
 		var tween = create_tween()
 		tween.tween_property(visual, "modulate", Color(1, 1, 1, 1), 0.15)
+		# 受击时打断呼吸偏移，复位后重启
+		if _breath_tween: _breath_tween.kill()
+		visual.position.y = _breath_base_y
+		tween.tween_callback(_run_breath_cycle)
 	if current_hp <= 0:
 		die()
 

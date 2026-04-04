@@ -83,6 +83,15 @@ func _setup_camera() -> void:
 # 背景（程序生成网格）
 # ────────────────────────────────────────
 func _setup_background() -> void:
+	# CanvasModulate：将场景整体压暗，让 PointLight2D 火把光效可见
+	# 颜色越深光感越强；(0.18, 0.14, 0.16) = 深紫黑地牢底色
+	var cm := CanvasModulate.new()
+	cm.name = "CanvasModulate"
+	# 提高环境底色亮度，不要太暗。整体保持地牢感但可见度良好
+	# (0.75, 0.70, 0.72) = 接近正常亮度，略偏暖灰，地牢氛围保留
+	cm.color = Color(0.75, 0.70, 0.72)
+	add_child(cm)
+
 	# 用 TileMapBackground 脚本铺设 Kenney 地砖
 	var bg = Node2D.new()
 	bg.set_script(load("res://scripts/systems/TileMapBackground.gd"))
@@ -365,44 +374,69 @@ func _setup_hud() -> void:
 	hud_layer.add_child(wave_lbl)
 	hud_layer.wave_label = wave_lbl
 
-	# 升级面板（隐藏）
+	# ── 升级面板：固定尺寸居中弹窗 ──────────────────────────
+	const PANEL_W := 960
+	const PANEL_H := 320
+	const VP_W   := 1280
+	const VP_H   := 720
+
+	# 全屏遮罩
+	var overlay = ColorRect.new()
+	overlay.name = "UpgradeOverlay"
+	overlay.visible = false
+	overlay.position = Vector2(0, 0)
+	overlay.size = Vector2(VP_W, VP_H)
+	overlay.color = Color(0.0, 0.0, 0.0, 0.62)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud_layer.add_child(overlay)
+
+	# 弹窗 Panel，固定尺寸，居中
 	var panel = Panel.new()
+	panel.name = "UpgradePanel"
 	panel.visible = false
-	panel.position = Vector2(140, 160)
-	panel.size = Vector2(1000, 340)
+	panel.position = Vector2((VP_W - PANEL_W) / 2.0, (VP_H - PANEL_H) / 2.0)
+	panel.size = Vector2(PANEL_W, PANEL_H)
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.05, 0.2, 0.92)
+	style.bg_color = Color(0.06, 0.06, 0.18, 0.97)
 	style.border_width_left = 2; style.border_width_right = 2
-	style.border_width_top = 2; style.border_width_bottom = 2
-	style.border_color = Color(0.3, 0.5, 1.0)
-	style.corner_radius_top_left = 8; style.corner_radius_top_right = 8
-	style.corner_radius_bottom_left = 8; style.corner_radius_bottom_right = 8
+	style.border_width_top  = 2; style.border_width_bottom = 2
+	style.border_color = Color(0.45, 0.65, 1.0)
+	style.corner_radius_top_left    = 12; style.corner_radius_top_right    = 12
+	style.corner_radius_bottom_left = 12; style.corner_radius_bottom_right = 12
 	panel.add_theme_stylebox_override("panel", style)
-	# 石纹背景纹理叠加
-	if ResourceLoader.exists("res://assets/ui/ui_panel_bg.png"):
-		var bg_rect = TextureRect.new()
-		bg_rect.texture = load("res://assets/ui/ui_panel_bg.png")
-		bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-		bg_rect.stretch_mode = TextureRect.STRETCH_TILE
-		bg_rect.modulate = Color(1,1,1,0.18)
-		bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel.add_child(bg_rect)
 	hud_layer.add_child(panel)
-	hud_layer.level_up_panel = panel
+
+	# 标题栏（固定高度）
+	var title_bg = ColorRect.new()
+	title_bg.position = Vector2(0, 0)
+	title_bg.size = Vector2(PANEL_W, 50)
+	title_bg.color = Color(0.12, 0.15, 0.38, 0.9)
+	title_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(title_bg)
 
 	var ptitle = Label.new()
-	ptitle.text = "⬆  选择升级"
-	ptitle.position = Vector2(0, 10); ptitle.size = Vector2(1000, 44)
+	ptitle.name = "PanelTitle"
+	ptitle.text = "✨  选择升级"
+	ptitle.position = Vector2(0, 8)
+	ptitle.size = Vector2(PANEL_W, 36)
 	ptitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ptitle.add_theme_font_size_override("font_size", 28)
+	ptitle.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	ptitle.add_theme_font_size_override("font_size", 24)
+	ptitle.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
+	ptitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(ptitle)
 
+	# 卡片容器（HBoxContainer，固定位置和大小）
 	var choices = HBoxContainer.new()
-	choices.position = Vector2(20, 65)
-	choices.size = Vector2(960, 250)
+	choices.name = "ChoiceButtons"
+	choices.position = Vector2(16, 58)
+	choices.size = Vector2(PANEL_W - 32, PANEL_H - 70)
 	choices.alignment = BoxContainer.ALIGNMENT_CENTER
-	choices.add_theme_constant_override("separation", 16)
+	choices.add_theme_constant_override("separation", 14)
 	panel.add_child(choices)
+
+	hud_layer.level_up_panel = panel
+	hud_layer.set_meta("upgrade_overlay", overlay)
 	hud_layer.choice_buttons = choices
 
 	# 技能槽（底部居中，最多6个）
@@ -1212,7 +1246,7 @@ func _event_relic_drop_bonus() -> void:
 func _event_spawn_elite_burst() -> void:
 	# 立刻生成2-3个精英怪
 	if not is_instance_valid(wave_manager): return
-	var count = 2 + (wave_manager.wave_cycle if wave_manager.has("wave_cycle") else 0)
+	var count = 2 + (wave_manager.wave_cycle if "wave_cycle" in wave_manager else 0)
 	count = clamp(count, 2, 4)
 	for i in range(count):
 		wave_manager.call_deferred("_spawn_elite")

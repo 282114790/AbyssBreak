@@ -136,12 +136,20 @@ func _show_elite_alert() -> void:
 var _picks_remaining: int = 0   # 本次升级还剩几次选择（5选2 → picks=2）
 var _first_pick_done: bool = false
 
+func _set_upgrade_panel_visible(v: bool) -> void:
+	if level_up_panel:
+		level_up_panel.visible = v
+	# 同步遮罩
+	var overlay = level_up_panel.get_parent().get_node_or_null("UpgradeOverlay") if level_up_panel else null
+	if overlay:
+		overlay.visible = v
+
 func _show_upgrade_panel(choices: Array) -> void:
 	if not level_up_panel or not choice_buttons: return
 	_pending_choices = choices
 	_picks_remaining = 2      # 5选2
 	_first_pick_done = false
-	level_up_panel.visible = true
+	_set_upgrade_panel_visible(true)
 	get_tree().paused = true
 	var snd = get_tree().get_first_node_in_group("sound_manager")
 	if snd: snd.play_level_up()
@@ -150,55 +158,199 @@ func _show_upgrade_panel(choices: Array) -> void:
 func _rebuild_choice_buttons() -> void:
 	for child in choice_buttons.get_children(): child.queue_free()
 
-	# 标题更新
-	var ptitle = level_up_panel.get_child(0) if level_up_panel.get_child_count() > 0 else null
+	# 标题更新（PanelTitle 在 panel_vbox 的第一个子节点 title_bar 里）
+	var ptitle = level_up_panel.find_child("PanelTitle", true, false) if level_up_panel else null
 	if ptitle and ptitle is Label:
 		if _picks_remaining == 2:
-			ptitle.text = "⬆  选择升级（选 2 个）"
+			ptitle.text = "✨  选择升级（选 2 个）"
 		else:
-			ptitle.text = "⬆  再选 1 个"
+			ptitle.text = "✨  再选 1 个"
 
 	for i in range(_pending_choices.size()):
 		var choice = _pending_choices[i]
 		var is_curse = choice.get("type", "") == "curse"
-		var btn = Button.new()
-		btn.text = "[%d] %s\n%s" % [i+1, choice["display_name"], choice.get("description","")]
-		btn.custom_minimum_size = Vector2(190, 120)
-		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.mouse_filter = Control.MOUSE_FILTER_STOP
-		btn.pressed.connect(_on_choice_selected.bind(choice, i))
+		var ctype   = choice.get("type", "")
 
-		var border_color = Color(1.0, 0.4, 0.1) if is_curse else Color(0.4, 0.6, 1.0)
-		var bs = StyleBoxFlat.new()
-		bs.bg_color = Color(0.25, 0.04, 0.04) if is_curse else Color(0.08, 0.08, 0.25)
-		bs.border_width_left = 2; bs.border_width_right = 2
-		bs.border_width_top = 2; bs.border_width_bottom = 2
-		bs.border_color = border_color
-		bs.corner_radius_top_left = 4; bs.corner_radius_top_right = 4
-		bs.corner_radius_bottom_left = 4; bs.corner_radius_bottom_right = 4
-		btn.add_theme_stylebox_override("normal", bs)
-		var hs = bs.duplicate()
-		hs.bg_color = Color(0.4, 0.1, 0.1) if is_curse else Color(0.15, 0.15, 0.4)
-		hs.border_color = Color(1.0, 0.6, 0.2) if is_curse else Color(0.6, 0.8, 1.0)
-		btn.add_theme_stylebox_override("hover", hs)
+		# ── 卡片容器（PanelContainer 作为点击区域）────────────────
+		var card = PanelContainer.new()
+		card.custom_minimum_size = Vector2(168, 240)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.size_flags_vertical   = Control.SIZE_FILL
+		card.mouse_filter = Control.MOUSE_FILTER_STOP
+		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+		# 卡片配色
+		var bg_col     : Color
+		var border_col : Color
+		var accent_col : Color
+		match ctype:
+			"curse":
+				bg_col = Color(0.20, 0.04, 0.04, 0.96)
+				border_col = Color(0.9, 0.35, 0.1)
+				accent_col = Color(1.0, 0.5, 0.2)
+			"evolve":
+				bg_col = Color(0.10, 0.08, 0.22, 0.96)
+				border_col = Color(0.7, 0.4, 1.0)
+				accent_col = Color(0.85, 0.6, 1.0)
+			"heal":
+				bg_col = Color(0.04, 0.16, 0.08, 0.96)
+				border_col = Color(0.3, 0.9, 0.45)
+				accent_col = Color(0.5, 1.0, 0.6)
+			_:
+				bg_col = Color(0.06, 0.08, 0.22, 0.96)
+				border_col = Color(0.38, 0.58, 1.0)
+				accent_col = Color(0.65, 0.82, 1.0)
+
+		var card_style = StyleBoxFlat.new()
+		card_style.bg_color = bg_col
+		card_style.border_width_left = 2; card_style.border_width_right  = 2
+		card_style.border_width_top  = 2; card_style.border_width_bottom = 2
+		card_style.border_color = border_col
+		card_style.corner_radius_top_left    = 8; card_style.corner_radius_top_right    = 8
+		card_style.corner_radius_bottom_left = 8; card_style.corner_radius_bottom_right = 8
+		card_style.content_margin_left  = 0; card_style.content_margin_right  = 0
+		card_style.content_margin_top   = 0; card_style.content_margin_bottom = 0
+		card.add_theme_stylebox_override("panel", card_style)
+
+		# ── 卡片内布局：垂直分三区 ─────────────────────────────
+		var vbox = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 0)
+		card.add_child(vbox)
+
+		# 区域1：顶部色条（accent）
+		var top_bar = ColorRect.new()
+		top_bar.custom_minimum_size = Vector2(0, 4)
+		top_bar.color = border_col
+		top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(top_bar)
+
+		# 区域2：图标区（用 PanelContainer 当背景色 + CenterContainer 居中图标）
+		var icon_panel = PanelContainer.new()
+		icon_panel.custom_minimum_size = Vector2(0, 72)
+		icon_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		icon_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var icon_bg_style = StyleBoxFlat.new()
+		icon_bg_style.bg_color = Color(bg_col.r * 0.55, bg_col.g * 0.55, bg_col.b * 0.6, 0.95)
+		icon_bg_style.content_margin_left = 0; icon_bg_style.content_margin_right  = 0
+		icon_bg_style.content_margin_top  = 0; icon_bg_style.content_margin_bottom = 0
+		icon_panel.add_theme_stylebox_override("panel", icon_bg_style)
+		vbox.add_child(icon_panel)
+
+		# CenterContainer 居中图标内容
+		var icon_center = CenterContainer.new()
+		icon_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		icon_center.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+		icon_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_panel.add_child(icon_center)
+
+		# 图标居中 HBox
+		var icon_hbox = HBoxContainer.new()
+		icon_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		icon_hbox.add_theme_constant_override("separation", 0)
+		icon_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_center.add_child(icon_hbox)
 
 		# 图标
-		var sid = choice.get("skill_id", choice.get("passive_id",""))
+		var sid = choice.get("skill_id", choice.get("passive_id", ""))
 		var itex = null; var icol = -1
 		if _sktex and _skill_icon_map.has(sid):
 			itex = _sktex; icol = _skill_icon_map[sid]
 		elif _pstex and _passive_icon_map.has(sid):
 			itex = _pstex; icol = _passive_icon_map[sid]
-		if itex and icol >= 0:
-			var ir = TextureRect.new(); var at = AtlasTexture.new()
-			at.atlas = itex; at.region = Rect2(icol*32, 0, 32, 32)
-			ir.texture = at; ir.custom_minimum_size = Vector2(32,32)
-			ir.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			ir.set_anchors_preset(Control.PRESET_TOP_LEFT)
-			ir.offset_left=6; ir.offset_top=6; ir.offset_right=38; ir.offset_bottom=38
-			btn.add_child(ir)
 
-		choice_buttons.add_child(btn)
+		if itex and icol >= 0:
+			var ir = TextureRect.new()
+			var at = AtlasTexture.new()
+			at.atlas = itex; at.region = Rect2(icol * 32, 0, 32, 32)
+			ir.texture = at
+			ir.custom_minimum_size = Vector2(48, 48)
+			ir.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			ir.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			icon_hbox.add_child(ir)
+		else:
+			# 无图标时用 emoji 大字
+			var emoji_lbl = Label.new()
+			match ctype:
+				"curse":  emoji_lbl.text = "💀"
+				"heal":   emoji_lbl.text = "💊"
+				"evolve": emoji_lbl.text = "⭐"
+				_:        emoji_lbl.text = "✦"
+			emoji_lbl.add_theme_font_size_override("font_size", 32)
+			emoji_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			icon_hbox.add_child(emoji_lbl)
+
+		# 区域3：文字区（名称 + 描述）
+		var text_pad = MarginContainer.new()
+		text_pad.add_theme_constant_override("margin_left",  10)
+		text_pad.add_theme_constant_override("margin_right", 10)
+		text_pad.add_theme_constant_override("margin_top",    8)
+		text_pad.add_theme_constant_override("margin_bottom", 8)
+		text_pad.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		text_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(text_pad)
+
+		var text_vbox = VBoxContainer.new()
+		text_vbox.add_theme_constant_override("separation", 4)
+		text_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		text_pad.add_child(text_vbox)
+
+		var name_lbl = Label.new()
+		name_lbl.text = "[%d] %s" % [i + 1, choice.get("display_name", "???")]
+		name_lbl.add_theme_font_size_override("font_size", 15)
+		name_lbl.add_theme_color_override("font_color", accent_col)
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		name_lbl.mouse_filter  = Control.MOUSE_FILTER_IGNORE
+		text_vbox.add_child(name_lbl)
+
+		var sep_line = ColorRect.new()
+		sep_line.custom_minimum_size = Vector2(0, 1)
+		sep_line.color = Color(border_col.r, border_col.g, border_col.b, 0.4)
+		sep_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		text_vbox.add_child(sep_line)
+
+		var desc_lbl = Label.new()
+		desc_lbl.text = choice.get("description", "")
+		desc_lbl.add_theme_font_size_override("font_size", 12)
+		desc_lbl.add_theme_color_override("font_color", Color(0.78, 0.82, 0.9))
+		desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		desc_lbl.mouse_filter  = Control.MOUSE_FILTER_IGNORE
+		text_vbox.add_child(desc_lbl)
+
+		# ── 悬停高亮（GuiInput 模拟 hover 效果）─────────────────
+		var hover_style = card_style.duplicate()
+		hover_style.bg_color = Color(
+			clampf(bg_col.r + 0.10, 0, 1),
+			clampf(bg_col.g + 0.10, 0, 1),
+			clampf(bg_col.b + 0.12, 0, 1), 0.98)
+		hover_style.border_color = accent_col
+		hover_style.border_width_left = 3; hover_style.border_width_right  = 3
+		hover_style.border_width_top  = 3; hover_style.border_width_bottom = 3
+
+		card.gui_input.connect(func(event: InputEvent) -> void:
+			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				_on_choice_selected(choice, i)
+		)
+		card.mouse_entered.connect(func() -> void:
+			card.add_theme_stylebox_override("panel", hover_style)
+		)
+		card.mouse_exited.connect(func() -> void:
+			card.add_theme_stylebox_override("panel", card_style)
+		)
+
+		choice_buttons.add_child(card)
+
+	# ── 调试：下一帧打印实际尺寸 ──
+	await get_tree().process_frame
+	print("[HUD DEBUG] level_up_panel visible=", level_up_panel.visible if level_up_panel else "null",
+		  " size=", level_up_panel.size if level_up_panel else "null")
+	print("[HUD DEBUG] choice_buttons size=", choice_buttons.size,
+		  " children=", choice_buttons.get_child_count())
+	for ch in choice_buttons.get_children():
+		print("  card: ", ch.get_class(), " size=", ch.size,
+			  " min=", ch.custom_minimum_size, " visible=", ch.visible)
 
 func _input(event: InputEvent) -> void:
 	if not level_up_panel or not level_up_panel.visible: return
@@ -219,7 +371,7 @@ func _on_choice_selected(choice: Dictionary, idx: int) -> void:
 
 	if _picks_remaining <= 0 or _pending_choices.is_empty():
 		# 选完了，关闭面板
-		if level_up_panel: level_up_panel.visible = false
+		_set_upgrade_panel_visible(false)
 		EventBus.game_logic_paused = false
 		get_tree().paused = false
 		EventBus.emit_signal("upgrade_panel_closed")

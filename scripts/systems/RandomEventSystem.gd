@@ -96,13 +96,13 @@ func _choose(action: String, player: Node) -> void:
 			if main.has_method("_drop_relic_at"):
 				main._drop_relic_at(player.global_position + Vector2(60, 0))
 		"aoe_damage":
-			player.hp = max(player.hp - player.max_hp * 0.15, 1)
-			EventBus.emit_signal("player_hp_changed", player.hp, player.max_hp)
+			player.current_hp = max(player.current_hp - player.max_hp * 0.15, 1)
+			EventBus.emit_signal("player_hp_changed", player.current_hp, player.max_hp)
 			for e in get_tree().get_nodes_in_group("enemies"):
 				if player.global_position.distance_to(e.global_position) < 300:
 					e.take_damage(player.max_hp * 0.5, false)
 		"blood_pact":
-			player.hp = max(player.hp - player.max_hp * 0.3, 1)
+			player.current_hp = max(player.current_hp - player.max_hp * 0.3, 1)
 			player.damage_multiplier *= 1.25
 			get_tree().create_timer(30.0).timeout.connect(func(): player.damage_multiplier /= 1.25)
 		"cd_reduce":
@@ -119,7 +119,7 @@ func _choose(action: String, player: Node) -> void:
 			EventBus.emit_signal("enemy_died", player.global_position, wave * 20)
 		"soul_absorb":
 			player.max_hp = int(player.max_hp * 1.2)
-			player.hp = min(player.hp + int(player.max_hp * 0.1), player.max_hp)
+			player.current_hp = min(player.current_hp + int(player.max_hp * 0.1), player.max_hp)
 		"nothing":
 			pass
 	_close()
