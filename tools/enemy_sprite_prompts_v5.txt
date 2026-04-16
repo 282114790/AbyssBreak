@@ -1,0 +1,8 @@
+--- [abyss_knight_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of a tall dark armored knight boss with glowing blue visor and heavy blue-steel plate armor carrying a broadsword, imposing dark fantasy boss character, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border
+
+--- [boss_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of a massive demon overlord boss with dark purple robes and crimson glowing eyes holding a twisted dark staff, towering menacing dark fantasy final boss, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border
+
+--- [abyss_minion_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of a small dark purple imp servant with tiny horns and glowing eyes, minor demon minion dark fantasy style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border

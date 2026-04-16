@@ -1,10 +1,16 @@
 @tool
 # SkillBloodNova.gd
-# 血月新星：消耗少量HP，释放全方向血色冲击波
 extends SkillBase
 class_name SkillBloodNova
 
-const HP_COST_RATIO := 0.05  # 消耗当前HP的5%
+const HP_COST_RATIO := 0.05
+
+var _nova_tex: Texture2D = null
+
+func _get_nova_texture() -> Texture2D:
+	if _nova_tex == null:
+		_nova_tex = load("res://assets/sprites/effects/skills/area_blood_nova.png")
+	return _nova_tex
 
 func activate() -> void:
 	if not owner_player: return
@@ -14,58 +20,74 @@ func activate() -> void:
 
 func _spend_hp_and_blast() -> void:
 	var lv = level if data else 1
-	# 消耗HP
-	var cost = owner_player.current_hp * HP_COST_RATIO
+	var cost = owner_player.max_hp * HP_COST_RATIO
 	cost = max(cost, 1.0)
-	owner_player.take_damage(cost)  # 用 take_damage 保证触发受伤逻辑（血条更新等）
+	owner_player.take_damage(cost)
 
-	# 爆发圆圈
 	var nova = Node2D.new()
 	nova.global_position = owner_player.global_position
 	_get_spawn_root().add_child(nova)
 
-	# 径向射线视觉
-	var ray_count = 16 + lv * 2
-	for i in range(ray_count):
-		var angle = TAU * i / ray_count
-		var ray = ColorRect.new()
-		ray.size = Vector2(4, 30 + lv * 5)
-		ray.position = Vector2(-2, 0)
-		ray.rotation = angle
-		ray.color = Color(0.9, 0.1, 0.2, 0.7)
-		nova.add_child(ray)
+	var sprite = Sprite2D.new()
+	sprite.texture = _get_nova_texture()
+	sprite.scale = Vector2(0.3, 0.3)
+	sprite.modulate = Color(1.0, 0.3, 0.3, 0.9)
+	nova.add_child(sprite)
 
-	# 中心光圈
-	var core = ColorRect.new()
-	core.size = Vector2(20, 20)
-	core.position = Vector2(-10, -10)
-	core.color = Color(1.0, 0.3, 0.4, 0.9)
-	nova.add_child(core)
-
-	# 伤害判断（即时全屏范围）
 	var radius = 120.0 + lv * 20.0
-	var dmg = get_current_damage() * (1.0 + cost / 10.0)  # HP消耗越高伤害越大
+	var dmg_base = get_current_damage() * (1.0 + cost / 10.0)
 
 	for enemy in _get_enemies():
 		if not is_instance_valid(enemy): continue
 		if enemy.global_position.distance_to(owner_player.global_position) <= radius:
-			if enemy.has_method("take_damage"):
-				enemy.take_damage(dmg)
-				EventBus.damage_dealt.emit(enemy.global_position, int(dmg), Color(1.0, 0.1, 0.2))
+			deal_damage(enemy, dmg_base)
 
-	# 扩散动画
-	_animate_nova(nova)
+	_spawn_blood_particles(owner_player.global_position, radius)
+	_animate_nova(nova, radius)
+	_screen_shake()
 
-func _animate_nova(nova: Node2D) -> void:
-	var elapsed := 0.0
-	var duration := 0.5
-	while elapsed < duration:
-		await get_tree().process_frame
-		var d = get_process_delta_time()
-		elapsed += d
-		if not is_instance_valid(nova): return
-		var t = elapsed / duration
-		nova.scale = Vector2(1.0 + t * 1.5, 1.0 + t * 1.5)
-		nova.modulate.a = 1.0 - t
-	if is_instance_valid(nova):
-		nova.queue_free()
+func _animate_nova(nova: Node2D, radius: float) -> void:
+	var target_scale = radius / 64.0 * 2.0
+	var tween = nova.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(nova, "scale", Vector2(target_scale, target_scale), 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(nova, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(nova.queue_free).set_delay(0.5)
+
+func _spawn_blood_particles(pos: Vector2, radius: float) -> void:
+	var burst = GPUParticles2D.new()
+	burst.emitting = false
+	burst.amount = 40 + level * 6
+	burst.lifetime = 0.6
+	burst.explosiveness = 0.9
+	burst.one_shot = true
+	burst.local_coords = false
+	var pm = ParticleProcessMaterial.new()
+	pm.direction = Vector3(0, -1, 0)
+	pm.spread = 180.0
+	pm.initial_velocity_min = 100.0
+	pm.initial_velocity_max = 280.0
+	pm.gravity = Vector3(0, 80, 0)
+	pm.scale_min = 3.0
+	pm.scale_max = 8.0
+	var g = Gradient.new()
+	g.set_color(0, Color(1.0, 0.2, 0.1, 1.0))
+	g.set_color(1, Color(0.5, 0.0, 0.0, 0.0))
+	var gt = GradientTexture1D.new()
+	gt.gradient = g
+	pm.color_ramp = gt
+	burst.process_material = pm
+	_get_spawn_root().add_child(burst)
+	burst.global_position = pos
+	burst.emitting = true
+	get_tree().create_timer(0.8).timeout.connect(burst.queue_free)
+
+func _screen_shake() -> void:
+	var cam = get_viewport().get_camera_2d()
+	if not cam: return
+	var orig = cam.offset
+	var tween = cam.create_tween()
+	for i in range(6):
+		var off = Vector2(randf_range(-4, 4), randf_range(-4, 4))
+		tween.tween_property(cam, "offset", orig + off, 0.03)
+	tween.tween_property(cam, "offset", orig, 0.03)

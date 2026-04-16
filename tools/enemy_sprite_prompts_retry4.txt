@@ -1,0 +1,2 @@
+--- [shield_guard_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a sturdy armored defender character in blue-gray metal armor with a large rectangular barrier on the left arm, dark fantasy RPG game style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 170x170 pixels

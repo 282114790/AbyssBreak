@@ -1,0 +1,14 @@
+--- [floor_style1_dark_stone.png] ---
+seamless tileable dark stone floor texture, top-down view, dungeon floor, irregular hand-cut stone blocks with dark green moss growing in cracks between stones, painted style, muted dark gray-green palette, subtle color variation between stones, no single dominant stone in center, even distribution of stone sizes, game asset, 2D game texture, seamless pattern, tileable in all directions, 1024x1024
+
+--- [floor_style2_herringbone.png] ---
+seamless tileable ancient dungeon brick floor texture, top-down view, regular rectangular stone bricks in herringbone pattern, worn and weathered surface, subtle cracks and dirt in mortar lines, dark warm gray and brown tones, hand-painted game art style, even lighting no shadows, 2D game floor texture, seamless repeating pattern, 1024x1024
+
+--- [floor_style3_abyss_rock.png] ---
+seamless tileable dark cracked rock surface texture, top-down view, abyss dungeon floor, fractured obsidian-like dark stone with faint blue-purple glow in deep cracks, weathered rough surface, dark fantasy style, hand-painted game texture, very dark color palette with subtle blue highlights in crevices, no strong directional lighting, 2D game asset seamless pattern, 1024x1024
+
+--- [floor_style4_marble_ruins.png] ---
+seamless tileable ruined marble floor texture, top-down view, cracked white-gray marble tiles with gold vein details, ancient temple ruins style, scattered dust and small debris, faded ornamental patterns partially visible, muted desaturated palette, hand-painted fantasy game art, soft even lighting, 2D game floor texture seamless, 1024x1024
+
+--- [floor_style5_wet_slab.png] ---
+seamless tileable wet stone slab floor texture, top-down view, dark dungeon floor partially covered with shallow water puddles, damp mossy stone slabs, dark teal and gray-brown tones, subtle water reflections on surface, swamp dungeon atmosphere, hand-painted 2D game texture, seamless tileable pattern, 1024x1024

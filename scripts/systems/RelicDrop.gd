@@ -1,12 +1,12 @@
 # RelicDrop.gd
-# 遗物掉落物节点——玩家走过去触发3选1面板
+# 遗物掉落物——玩家触碰后自动随机获得
 extends Area2D
 
 var _collected: bool = false
 var _label: Label
 var _bob_offset: float = 0.0
 var _bob_time: float = 0.0
-var relics_to_offer: Array = []  # 3个RelicData候选
+var relics_to_offer: Array = []
 
 func _ready() -> void:
 	# 碰撞层：layer=4(遗物), mask=1(玩家)
@@ -14,26 +14,25 @@ func _ready() -> void:
 	collision_mask = 1
 	body_entered.connect(_on_body_entered)
 
-	# 视觉：发光圆圈 + emoji标签
-	var circle = ColorRect.new()
-	circle.size = Vector2(36, 36)
-	circle.position = Vector2(-18, -18)
-	circle.color = Color(0.9, 0.75, 0.1, 0.85)  # 金色
-	add_child(circle)
+	# 视觉：魔法宝箱图标
+	var sprite = Sprite2D.new()
+	sprite.name = "RelicSprite"
+	var icon_path := "res://assets/ui/relic_drop.png"
+	if ResourceLoader.exists(icon_path):
+		sprite.texture = load(icon_path)
+		sprite.scale = Vector2(0.7, 0.7)
+	add_child(sprite)
 
 	_label = Label.new()
-	_label.text = "🎁"
-	_label.add_theme_font_size_override("font_size", 28)
-	_label.position = Vector2(-16, -22)
+	_label.text = "遗物"
+	_label.add_theme_font_size_override("font_size", 10)
+	_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	_label.add_theme_constant_override("shadow_offset_x", 1)
+	_label.add_theme_constant_override("shadow_offset_y", 1)
+	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_label.position = Vector2(-18, 20)
 	add_child(_label)
-
-	# 提示文字
-	var hint = Label.new()
-	hint.text = "遗物"
-	hint.add_theme_font_size_override("font_size", 12)
-	hint.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
-	hint.position = Vector2(-18, 20)
-	add_child(hint)
 
 	var col = CollisionShape2D.new()
 	var circle_shape = CircleShape2D.new()
@@ -54,8 +53,6 @@ func _process(delta: float) -> void:
 
 func setup(choices: Array) -> void:
 	relics_to_offer = choices
-	if choices.size() > 0:
-		_label.text = choices[0].icon_emoji
 
 func _on_body_entered(body: Node) -> void:
 	if _collected or not body.is_in_group("player"):

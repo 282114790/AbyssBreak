@@ -1,0 +1,14 @@
+--- [abyss_knight_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a dark armored knight with glowing blue visor and heavy blue-steel plate armor carrying a broadsword, dark fantasy style, each frame approximately 170x170 pixels, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border between frames
+
+--- [fire_sprite_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a small floating fire elemental spirit made of bright orange and yellow flames with glowing ember core, dark fantasy style, each frame approximately 170x170 pixels, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border between frames
+
+--- [splitter_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a mutant insect creature with segmented yellow-green carapace and multiple legs, dark fantasy style, each frame approximately 170x170 pixels, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border between frames
+
+--- [shield_guard_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a sturdy armored defender character in blue-gray metal armor with a large rectangular barrier on the left arm, dark fantasy style, each frame approximately 170x170 pixels, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border between frames
+
+--- [shadow_assassin_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a shadowy rogue assassin wrapped in dark purple cloak with glowing violet daggers, dark fantasy style, each frame approximately 170x170 pixels, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border between frames

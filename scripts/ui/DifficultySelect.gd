@@ -1,4 +1,9 @@
 # DifficultySelect.gd
+# 难度选择 — 默会知识原则：
+# 1. 颜色梯度传达危险程度：绿→橙→红，无需文字说明
+# 2. 收益/代价用颜色分离，▲绿=好处 ▼橙=风险
+# 3. 点击卡片直接进入，去掉冗余的"已选择"状态和确认按钮
+# 4. 图标→名称→收益→代价→魂石奖励，自上而下焦点递减
 extends CanvasLayer
 class_name DifficultySelect
 
@@ -6,7 +11,6 @@ const DD = preload("res://scripts/systems/DifficultyData.gd")
 
 signal difficulty_selected(diff_data)
 
-var _selected = null  # DifficultyData
 var _difficulties: Array = []
 
 func _ready() -> void:
@@ -16,14 +20,14 @@ func _ready() -> void:
 
 func _build_difficulties() -> void:
 	_difficulties = [
-		_make_diff("normal", "普通", "适合初次体验\n敌人数量×1.0，伤害×1.0", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-		_make_diff("hard",   "困难", "挑战老手\n敌人血量×1.5，伤害×1.3，数量×1.3，经验×1.2，魂石×1.5", 1.5, 1.3, 1.1, 1.3, 1.2, 1.5),
-		_make_diff("abyss",  "深渊", "极限挑战，魂石双倍\n敌人血量×2.5，伤害×2.0，速度×1.2，数量×1.8", 2.5, 2.0, 1.2, 1.8, 1.5, 2.0),
+		_make_diff("normal", "普通", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
+		_make_diff("hard",   "困难", 1.5, 1.3, 1.1, 1.3, 1.2, 1.5),
+		_make_diff("abyss",  "深渊", 2.5, 2.0, 1.2, 1.8, 1.5, 2.0),
 	]
 
-func _make_diff(id_: String, name_: String, desc_: String, hp: float, dmg: float, spd: float, cnt: float, exp_m: float, soul: float) -> Resource:
+func _make_diff(id_: String, name_: String, hp: float, dmg: float, spd: float, cnt: float, exp_m: float, soul: float) -> Resource:
 	var d = DD.new()
-	d.id = id_; d.display_name = name_; d.description = desc_
+	d.id = id_; d.display_name = name_; d.description = ""
 	d.enemy_hp_mult = hp; d.enemy_dmg_mult = dmg; d.enemy_speed_mult = spd
 	d.enemy_count_mult = cnt; d.exp_mult = exp_m; d.soul_stone_mult = soul
 	return d
@@ -33,207 +37,196 @@ func show_screen() -> void:
 	_build_ui()
 
 func _build_ui() -> void:
-	for c in get_children():
-		c.queue_free()
+	for c in get_children(): c.queue_free()
 	await get_tree().process_frame
 
-	# 背景
 	var bg = ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.04, 0.04, 0.10, 0.96)
+	bg.color = Color(0.03, 0.03, 0.08, 0.95)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	# 标题
+	var root = VBoxContainer.new()
+	root.set_anchors_preset(Control.PRESET_CENTER)
+	root.custom_minimum_size = Vector2(760, 380)
+	root.position = Vector2(-380, -190)
+	root.add_theme_constant_override("separation", 22)
+	add_child(root)
+
 	var title = Label.new()
 	title.text = "选择难度"
-	title.add_theme_font_size_override("font_size", 40)
-	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	title.offset_top = 50; title.offset_bottom = 100
-	add_child(title)
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65))
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(title)
 
-	# 副标题
-	var sub = Label.new()
-	sub.text = "难度越高，魂石奖励越丰厚"
-	sub.add_theme_font_size_override("font_size", 15)
-	sub.add_theme_color_override("font_color", Color(0.62, 0.62, 0.72))
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	sub.offset_top = 100; sub.offset_bottom = 132
-	add_child(sub)
-
-	# 卡片容器
 	var hbox = HBoxContainer.new()
-	hbox.set_anchors_preset(Control.PRESET_CENTER)
-	hbox.offset_left = -440; hbox.offset_right  =  440
-	hbox.offset_top  = -140; hbox.offset_bottom =  155
-	hbox.add_theme_constant_override("separation", 20)
-	add_child(hbox)
+	hbox.add_theme_constant_override("separation", 18)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	root.add_child(hbox)
 
-	var bg_colors = [
-		Color(0.06, 0.16, 0.06, 0.92),
-		Color(0.16, 0.09, 0.02, 0.92),
-		Color(0.17, 0.04, 0.04, 0.92),
+	var configs = [
+		{
+			"idx": 0,
+			"icon": "🟢",
+			"tc": Color(0.35, 0.9, 0.35),
+			"bg": Color(0.05, 0.13, 0.05, 0.95),
+			"benefits": ["平衡的初始体验"],
+			"costs": [],
+		},
+		{
+			"idx": 1,
+			"icon": "🔥",
+			"tc": Color(1.0, 0.62, 0.1),
+			"bg": Color(0.14, 0.08, 0.02, 0.95),
+			"benefits": ["经验 ×1.2", "魂石 ×1.5"],
+			"costs": ["敌人血量 ×1.5", "伤害 ×1.3", "数量 ×1.3"],
+		},
+		{
+			"idx": 2,
+			"icon": "💀",
+			"tc": Color(0.9, 0.2, 0.2),
+			"bg": Color(0.15, 0.03, 0.03, 0.95),
+			"benefits": ["经验 ×1.5", "魂石 ×2.0"],
+			"costs": ["敌人血量 ×2.5", "伤害 ×2.0", "速度 ×1.2", "数量 ×1.8"],
+		},
 	]
-	var border_colors = [
-		Color(0.35, 0.90, 0.35),
-		Color(1.00, 0.62, 0.10),
-		Color(0.90, 0.18, 0.18),
-	]
 
-	if _selected == null:
-		_selected = _difficulties[0]
+	for cfg in configs:
+		_build_card(hbox, _difficulties[cfg["idx"]], cfg)
 
-	for i in range(_difficulties.size()):
-		hbox.add_child(_make_card(_difficulties[i], bg_colors[i], border_colors[i]))
+func _build_card(parent: HBoxContainer, diff: Resource, cfg: Dictionary) -> void:
+	var tc: Color = cfg["tc"]
+	var bg_col: Color = cfg["bg"]
 
-	# 分割线
-	var divider = ColorRect.new()
-	divider.color = Color(1, 1, 1, 0.07)
-	divider.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	divider.offset_top = -105; divider.offset_bottom = -104
-	add_child(divider)
-
-	# 进入按钮
-	var enter_btn = Button.new()
-	enter_btn.text = "▶  进入深渊"
-	enter_btn.add_theme_font_size_override("font_size", 22)
-	enter_btn.custom_minimum_size = Vector2(260, 56)
-	enter_btn.anchor_left   = 0.5;  enter_btn.anchor_right  = 0.5
-	enter_btn.anchor_top    = 1.0;  enter_btn.anchor_bottom = 1.0
-	enter_btn.offset_left   = -130; enter_btn.offset_right  = 130
-	enter_btn.offset_top    = -92;  enter_btn.offset_bottom = -36
-
-	var es = StyleBoxFlat.new()
-	es.bg_color = Color(0.14, 0.09, 0.28)
-	es.border_color = Color(0.65, 0.48, 1.0)
-	es.border_width_left = 2; es.border_width_right  = 2
-	es.border_width_top  = 2; es.border_width_bottom = 2
-	es.corner_radius_top_left = 6; es.corner_radius_top_right   = 6
-	es.corner_radius_bottom_left = 6; es.corner_radius_bottom_right = 6
-	var eh = es.duplicate()
-	eh.bg_color = Color(0.20, 0.13, 0.40)
-	eh.border_color = Color(0.85, 0.70, 1.0)
-	enter_btn.add_theme_stylebox_override("normal",  es)
-	enter_btn.add_theme_stylebox_override("hover",   eh)
-	enter_btn.add_theme_stylebox_override("pressed", eh)
-	enter_btn.pressed.connect(func():
-		if _selected:
-			visible = false
-			emit_signal("difficulty_selected", _selected)
-	)
-	add_child(enter_btn)
-
-func _make_card(diff, bg_color: Color, border_color: Color) -> Button:
-	var is_selected = (_selected != null and _selected.id == diff.id)
-
-	var card = Button.new()
-	card.custom_minimum_size = Vector2(240, 280)
+	var card = PanelContainer.new()
+	card.custom_minimum_size = Vector2(230, 310)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.size_flags_vertical   = Control.SIZE_EXPAND_FILL
-	card.focus_mode = Control.FOCUS_NONE
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	# 普通样式
-	var sn = StyleBoxFlat.new()
-	sn.bg_color = bg_color
-	sn.corner_radius_top_left    = 10; sn.corner_radius_top_right    = 10
-	sn.corner_radius_bottom_left = 10; sn.corner_radius_bottom_right = 10
-	if is_selected:
-		sn.border_color = Color(1.0, 0.88, 0.2)
-		sn.border_width_left = 3; sn.border_width_right  = 3
-		sn.border_width_top  = 3; sn.border_width_bottom = 3
-	else:
-		sn.border_color = Color(border_color.r, border_color.g, border_color.b, 0.45)
-		sn.border_width_left = 1; sn.border_width_right  = 1
-		sn.border_width_top  = 1; sn.border_width_bottom = 1
+	var card_style = StyleBoxFlat.new()
+	card_style.bg_color = bg_col
+	card_style.border_width_left = 2; card_style.border_width_right = 2
+	card_style.border_width_top = 2; card_style.border_width_bottom = 2
+	card_style.border_color = Color(tc.r * 0.45, tc.g * 0.45, tc.b * 0.45, 0.5)
+	card_style.corner_radius_top_left = 10; card_style.corner_radius_top_right = 10
+	card_style.corner_radius_bottom_left = 10; card_style.corner_radius_bottom_right = 10
+	card_style.content_margin_left = 16; card_style.content_margin_right = 16
+	card_style.content_margin_top = 0; card_style.content_margin_bottom = 14
+	card.add_theme_stylebox_override("panel", card_style)
 
-	# hover 样式
-	var sh = sn.duplicate()
-	sh.bg_color = bg_color.lightened(0.10)
-	sh.border_color = Color(1.0, 0.88, 0.2, 0.70)
-	sh.border_width_left = 2; sh.border_width_right  = 2
-	sh.border_width_top  = 2; sh.border_width_bottom = 2
-
-	card.add_theme_stylebox_override("normal",  sn)
-	card.add_theme_stylebox_override("hover",   sh)
-	card.add_theme_stylebox_override("pressed", sh)
-	card.add_theme_stylebox_override("focus",   sn)
-
-	# 点卡片只切换选中，不直接进入
-	card.pressed.connect(func():
-		_selected = diff
-		_build_ui()
-	)
-
-	# VBox 撑满卡片
 	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
-	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.size_flags_vertical   = Control.SIZE_EXPAND_FILL
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 0)
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(vbox)
 
-	# 难度名（大标题）
+	# ── 顶部色条 ──
+	var accent = ColorRect.new()
+	accent.custom_minimum_size = Vector2(0, 4)
+	accent.color = tc
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(accent)
+
+	# ── 图标 ──
+	var icon_lbl = Label.new()
+	icon_lbl.text = cfg["icon"]
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 38)
+	icon_lbl.custom_minimum_size = Vector2(0, 58)
+	icon_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(icon_lbl)
+
+	# ── 名称 ──
 	var name_lbl = Label.new()
 	name_lbl.text = diff.display_name
-	name_lbl.add_theme_font_size_override("font_size", 30)
-	name_lbl.add_theme_color_override("font_color",
-		Color(1.0, 0.88, 0.2) if is_selected else border_color)
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.add_theme_font_size_override("font_size", 22)
+	name_lbl.add_theme_color_override("font_color", tc)
+	name_lbl.custom_minimum_size = Vector2(0, 32)
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(name_lbl)
 
-	# 分割线
-	var sep = HSeparator.new()
-	sep.add_theme_color_override("color",
-		Color(border_color.r, border_color.g, border_color.b, 0.35))
+	# ── 分割线 ──
+	var sep = ColorRect.new()
+	sep.custom_minimum_size = Vector2(0, 1)
+	sep.color = Color(tc.r, tc.g, tc.b, 0.2)
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(sep)
 
-	# 描述：短标语（大） + 详细数值（小）
-	var lines = diff.description.split("\n")
-	if lines.size() >= 1:
-		var tagline = Label.new()
-		tagline.text = lines[0]
-		tagline.add_theme_font_size_override("font_size", 15)
-		tagline.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-		tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		tagline.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_child(tagline)
-	if lines.size() >= 2:
-		var detail = Label.new()
-		detail.text = lines[1]
-		detail.add_theme_font_size_override("font_size", 11)
-		detail.add_theme_color_override("font_color", Color(0.68, 0.68, 0.68))
-		detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_child(detail)
+	var spacer1 = Control.new()
+	spacer1.custom_minimum_size = Vector2(0, 8)
+	vbox.add_child(spacer1)
 
-	# 弹性间距
-	var spacer = Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_child(spacer)
+	# ── 收益 ──
+	for b in cfg["benefits"]:
+		var lbl = Label.new()
+		lbl.text = "▲ " + b
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 12)
+		lbl.add_theme_color_override("font_color", Color(0.35, 0.95, 0.45))
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(lbl)
 
-	# 魂石奖励
+	if not cfg["costs"].is_empty():
+		var spacer2 = Control.new()
+		spacer2.custom_minimum_size = Vector2(0, 4)
+		vbox.add_child(spacer2)
+
+	# ── 代价 ──
+	for c in cfg["costs"]:
+		var lbl = Label.new()
+		lbl.text = "▼ " + c
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 11)
+		lbl.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3))
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(lbl)
+
+	# ── 弹性间距 ──
+	var flex = Control.new()
+	flex.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	flex.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(flex)
+
+	# ── 魂石奖励（底部锚定）──
+	var soul_sep = ColorRect.new()
+	soul_sep.custom_minimum_size = Vector2(0, 1)
+	soul_sep.color = Color(0.5, 0.85, 1.0, 0.15)
+	soul_sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(soul_sep)
+
 	var soul_lbl = Label.new()
-	soul_lbl.text = "💎  魂石奖励  ×%.1f" % diff.soul_stone_mult
-	soul_lbl.add_theme_font_size_override("font_size", 14)
-	soul_lbl.add_theme_color_override("font_color", Color(0.50, 0.85, 1.0))
+	soul_lbl.text = "💎 魂石奖励 ×%.1f" % diff.soul_stone_mult
 	soul_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	soul_lbl.add_theme_font_size_override("font_size", 13)
+	soul_lbl.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
+	soul_lbl.custom_minimum_size = Vector2(0, 24)
 	soul_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(soul_lbl)
 
-	# 已选中标识
-	var state_lbl = Label.new()
-	state_lbl.text = "✦  已选择" if is_selected else " "
-	state_lbl.add_theme_font_size_override("font_size", 13)
-	state_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.2))
-	state_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	state_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_child(state_lbl)
+	# ── Hover / Click ──
+	var hover_style = card_style.duplicate()
+	hover_style.bg_color = Color(bg_col.r + 0.04, bg_col.g + 0.04, bg_col.b + 0.04, 0.98)
+	hover_style.border_color = Color(tc.r, tc.g, tc.b, 0.85)
+	hover_style.border_width_left = 3; hover_style.border_width_right = 3
+	hover_style.border_width_top = 3; hover_style.border_width_bottom = 3
 
-	return card
+	card.mouse_entered.connect(func():
+		card.add_theme_stylebox_override("panel", hover_style)
+		var tw = card.create_tween()
+		tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.1).set_ease(Tween.EASE_OUT)
+	)
+	card.mouse_exited.connect(func():
+		card.add_theme_stylebox_override("panel", card_style)
+		var tw = card.create_tween()
+		tw.tween_property(card, "scale", Vector2(1.0, 1.0), 0.1).set_ease(Tween.EASE_OUT)
+	)
+	card.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			visible = false
+			emit_signal("difficulty_selected", diff)
+	)
+
+	parent.add_child(card)

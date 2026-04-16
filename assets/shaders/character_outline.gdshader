@@ -6,6 +6,8 @@ uniform vec4 outline_color : source_color = vec4(1.0, 0.85, 0.1, 1.0);
 uniform float outline_width : hint_range(0.0, 8.0) = 2.5;
 uniform vec4 shadow_color : source_color = vec4(0.0, 0.0, 0.0, 0.5);
 uniform vec2 shadow_offset = vec2(2.0, 3.0);
+uniform float flash_intensity : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 flash_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 
 void fragment() {
 	vec2 tex_size = vec2(textureSize(TEXTURE, 0));
@@ -59,5 +61,6 @@ void fragment() {
 		result = mix(result, vec4(outline_color.rgb, 1.0), outline_alpha * outline_color.a);
 	}
 	result = mix(result, col, col.a);
+	result.rgb = mix(result.rgb, flash_color.rgb, flash_intensity);
 	COLOR = result;
 }

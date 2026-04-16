@@ -7,7 +7,7 @@ var damage: float = 0.0
 var velocity: Vector2 = Vector2.ZERO
 var direction: Vector2 = Vector2.ZERO
 var target: Node2D = null
-var speed: float = 200.0
+var speed: float = 400.0
 var pierce_count: int = 1
 var hit_enemies: Array = []
 var is_homing: bool = true   # 是否追踪目标
@@ -34,22 +34,24 @@ func setup_dir(dmg: float, dir: Vector2, spd: float, pierce: int = 1) -> void:
 	pierce_count = pierce
 	direction = dir.normalized()
 	velocity = direction * speed
-	target = null  # 无追踪目标，直线飞行
-	collision_mask = 2
+	target = null
+	collision_mask = 2 | 8
 	body_entered.connect(_on_hit)
 
 func _ready() -> void:
 	add_to_group("player_projectiles")
-	# 碰撞层：layer 3=player_projectiles(value=4), mask 2=enemies(value=2)
+	# 碰撞层：layer 3=player_projectiles(value=4), mask 2=enemies(value=2) + 4=props(value=8)
 	collision_layer = 4
-	collision_mask = 2
+	collision_mask = 2 | 8
 	monitoring = true
+	monitorable = true
 	if not body_entered.is_connected(_on_hit):
 		body_entered.connect(_on_hit)
+	if not area_entered.is_connected(_on_area_hit):
+		area_entered.connect(_on_area_hit)
 	# 自动销毁（优先归还对象池）
 	var timer = get_tree().create_timer(lifetime)
 	timer.timeout.connect(_return_to_pool)
-	# 不再用 Line2D 拖尾（会产生红线残影），已由 GPUParticles2D 尾迹替代
 
 func _process(delta: float) -> void:
 	if EventBus.game_logic_paused:
@@ -72,18 +74,18 @@ func _on_hit(body: Node2D) -> void:
 		return
 	hit_enemies.append(body)
 	# 暴击判断
-	var is_crit = false
-	var final_dmg = damage
 	if owner_skill and is_instance_valid(owner_skill):
-		var result = owner_skill.calc_damage(damage)
-		final_dmg = result[0]
-		is_crit = result[1]
-	body.take_damage(final_dmg, is_crit)
-	# 命中特效
+		owner_skill.deal_damage(body, damage)
+	else:
+		body.take_damage(damage)
 	_spawn_hit_effect()
 	pierce_count -= 1
 	if pierce_count <= 0:
 		_return_to_pool()
+
+func _on_area_hit(area: Area2D) -> void:
+	if area.has_method("hit_by_skill"):
+		area.hit_by_skill(damage, global_position)
 
 func _return_to_pool() -> void:
 	var pool = get_tree().current_scene.get_node_or_null("ObjectPool")
@@ -116,8 +118,8 @@ func _spawn_hit_effect() -> void:
 	pm.scale_min = 3.0
 	pm.scale_max = 7.0
 	var g = Gradient.new()
-	g.set_color(0, Color(0.5, 0.8, 1.0, 1.0))
-	g.set_color(1, Color(0.2, 0.4, 1.0, 0.0))
+	g.set_color(0, Color(1.0, 0.9, 0.4, 1.0))
+	g.set_color(1, Color(0.9, 0.2, 0.0, 0.0))
 	var gt = GradientTexture1D.new()
 	gt.gradient = g
 	pm.color_ramp = gt

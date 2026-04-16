@@ -1,0 +1,24 @@
+[
+  {
+    "category": "detail_overlay",
+    "theme": "dungeon",
+    "sheet_file": "detail_overlay_dungeon_sheet.png",
+    "tile_count": 18,
+    "source_tile_size": [
+      256,
+      256
+    ],
+    "display_tile_size": [
+      128,
+      128
+    ],
+    "sheet_cols": 6,
+    "sheet_rows": 3,
+    "has_alpha": true,
+    "seamless": false,
+    "scale_factor": [
+      0.5,
+      0.5
+    ]
+  }
+]

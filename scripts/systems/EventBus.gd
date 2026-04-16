@@ -14,6 +14,7 @@ signal enemy_died(position: Vector2, exp_reward: int)
 
 # 玩家相关
 signal player_damaged(current_hp: float, max_hp: float)
+signal player_hp_changed(current_hp: float, max_hp: float)
 signal player_died
 signal player_leveled_up(new_level: int)
 signal player_exp_changed(current_exp: int, required_exp: int)
@@ -49,3 +50,24 @@ signal relic_collected(relic_id: String)
 
 # 技能协同系统（#17）
 signal synergy_activated(synergy: Dictionary)
+
+# 元素协同
+signal element_resonance_activated(element: String, count: int, effects: Dictionary)
+
+# 技能替换
+signal show_skill_replace_panel(new_skill_data, callback: Callable)
+signal skill_replaced(old_id: String, new_id: String)
+
+# 章节系统
+signal chapter_changed(chapter: int, title: String)
+signal chapter_event_start(event_type: String, data: Dictionary)
+signal chapter_event_chosen(choice: Dictionary)
+
+# Build 图鉴
+signal build_discovered(build_id: String, build_name: String)
+
+# 拾取飘字
+signal pickup_float_text(world_pos: Vector2, text: String, color: Color)
+
+# 可破坏场景道具
+signal prop_destroyed(position: Vector2, prop_type: String)

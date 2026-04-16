@@ -20,3 +20,9 @@ class_name CharacterData
 @export var walk_frame_count: int = 8    # 动画帧数
 @export var walk_frame_w: int = 128      # 单帧宽度px
 @export var walk_frame_h: int = 128      # 单帧高度px
+
+# 元素亲和：这些元素的技能抽取权重 +50%，伤害 +15%
+@export var element_affinity: Array = []  # Array of SkillData.Element enum values
+# 独特机制 ID
+@export var unique_mechanic: String = ""  # "elemental_chain" / "revenge_strike" / "velocity_damage"
+@export var mechanic_desc: String = ""

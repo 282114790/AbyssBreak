@@ -1,8 +1,14 @@
 @tool
 # SkillArcaneOrb.gd
-# 奥术弹幕：发射多个旋转弹幕，绕玩家公转后向外飞出
 extends SkillBase
 class_name SkillArcaneOrb
+
+var _orb_tex: Texture2D = null
+
+func _get_orb_texture() -> Texture2D:
+	if _orb_tex == null:
+		_orb_tex = load("res://assets/sprites/effects/skills/proj_arcane_orb.png")
+	return _orb_tex
 
 func activate() -> void:
 	if not owner_player: return
@@ -12,7 +18,7 @@ func activate() -> void:
 
 func _spawn_orbs() -> void:
 	var lv = level if data else 1
-	var count = 3 + lv  # Lv1=4, Lv5=8
+	var count = 3 + lv
 
 	for i in range(count):
 		var angle = TAU * i / count
@@ -24,25 +30,41 @@ func _launch_orb(start_angle: float) -> void:
 	orb.global_position = owner_player.global_position
 	_get_spawn_root().add_child(orb)
 
-	# 视觉：蓝色发光圆
-	var glow = ColorRect.new()
-	glow.size = Vector2(14, 14)
-	glow.position = Vector2(-7, -7)
-	glow.color = Color(0.3, 0.6, 1.0, 0.9)
-	orb.add_child(glow)
-	var inner = ColorRect.new()
-	inner.size = Vector2(6, 6)
-	inner.position = Vector2(-3, -3)
-	inner.color = Color(0.8, 0.95, 1.0, 1.0)
-	orb.add_child(inner)
+	var sprite = Sprite2D.new()
+	sprite.texture = _get_orb_texture()
+	sprite.scale = Vector2(0.4, 0.4)
+	orb.add_child(sprite)
+
+	var trail = GPUParticles2D.new()
+	trail.emitting = true
+	trail.amount = 14
+	trail.lifetime = 0.3
+	trail.explosiveness = 0.0
+	trail.local_coords = false
+	var pm = ParticleProcessMaterial.new()
+	pm.direction = Vector3(0, 0, 0)
+	pm.spread = 180.0
+	pm.initial_velocity_min = 0.0
+	pm.initial_velocity_max = 5.0
+	pm.gravity = Vector3.ZERO
+	pm.scale_min = 2.0
+	pm.scale_max = 5.0
+	var g = Gradient.new()
+	g.set_color(0, Color(0.4, 0.6, 1.0, 0.6))
+	g.set_color(1, Color(0.2, 0.3, 0.9, 0.0))
+	var gt = GradientTexture1D.new()
+	gt.gradient = g
+	pm.color_ramp = gt
+	trail.process_material = pm
+	orb.add_child(trail)
 
 	var dmg = get_current_damage()
-	var orbit_time = 0.6  # 公转时间
+	var orbit_time = 0.6
 	var orbit_radius = 50.0
 	var elapsed = 0.0
 	var launched = false
 	var velocity = Vector2.ZERO
-	var speed = 280.0 + lv * 20.0
+	var speed = 500.0 + lv * 30.0
 	var hit_enemies = {}
 
 	while true:
@@ -54,32 +76,55 @@ func _launch_orb(start_angle: float) -> void:
 		if not is_instance_valid(owner_player):
 			orb.queue_free(); return
 
+		sprite.rotation += d * 3.0
+
 		if not launched:
-			# 公转阶段
 			var angle = start_angle + elapsed / orbit_time * TAU
 			orb.global_position = owner_player.global_position + Vector2(cos(angle), sin(angle)) * orbit_radius
 			if elapsed >= orbit_time:
 				launched = true
 				velocity = Vector2(cos(start_angle), sin(start_angle)) * speed
 		else:
-			# 飞出阶段
 			orb.global_position += velocity * d
-			# 检测碰撞
 			for enemy in _get_enemies():
 				if not is_instance_valid(enemy): continue
 				if hit_enemies.has(enemy): continue
 				if orb.global_position.distance_to(enemy.global_position) < 24:
 					hit_enemies[enemy] = true
-					if enemy.has_method("take_damage"):
-						enemy.take_damage(dmg)
-						EventBus.damage_dealt.emit(enemy.global_position, int(dmg), Color(0.3, 0.7, 1.0))
-					var sm = get_tree().get_first_node_in_group("sound_manager")
-					if sm: sm.play_hit()
+					deal_damage(enemy)
+					_spawn_hit_spark(orb.global_position)
 
-			# 出界销毁
 			if orb.global_position.distance_to(owner_player.global_position) > 800:
 				break
 			if elapsed > 5.0: break
 
 	if is_instance_valid(orb):
 		orb.queue_free()
+
+func _spawn_hit_spark(pos: Vector2) -> void:
+	var spark = GPUParticles2D.new()
+	spark.emitting = false
+	spark.amount = 10
+	spark.lifetime = 0.25
+	spark.explosiveness = 0.95
+	spark.one_shot = true
+	spark.local_coords = false
+	var pm = ParticleProcessMaterial.new()
+	pm.direction = Vector3(0, -1, 0)
+	pm.spread = 180.0
+	pm.initial_velocity_min = 40.0
+	pm.initial_velocity_max = 100.0
+	pm.gravity = Vector3.ZERO
+	pm.scale_min = 2.0
+	pm.scale_max = 5.0
+	var g = Gradient.new()
+	g.set_color(0, Color(0.5, 0.7, 1.0, 1.0))
+	g.set_color(1, Color(0.2, 0.4, 0.9, 0.0))
+	var gt = GradientTexture1D.new()
+	gt.gradient = g
+	pm.color_ramp = gt
+	spark.process_material = pm
+	_get_spawn_root().add_child(spark)
+	spark.global_position = pos
+	spark.emitting = true
+	get_tree().create_timer(0.4).timeout.connect(spark.queue_free)

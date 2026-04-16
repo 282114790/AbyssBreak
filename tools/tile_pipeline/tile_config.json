@@ -1,0 +1,201 @@
+{
+  "project": "AbyssBreak",
+  "output_dir": "../../assets/tilesets",
+  "raw_dir": "../../raw_tiles",
+  "processed_dir": "./processed_tiles",
+
+  "image_api": {
+    "provider": "google_gemini",
+    "model": "imagen-3.0-generate-002",
+    "aspect_ratio": "1:1",
+    "api_key_env": "GEMINI_API_KEY"
+  },
+
+  "style_anchor": {
+    "description": "dark fantasy dungeon, top-down 2D RPG, hand-painted style, detailed texture, muted palette of deep purple, burnt orange, stone grey, moss green",
+    "tile_suffix": ", game asset, clean edges, no text, no watermark, no blank areas, fill the entire image, no empty space, no white borders",
+    "prop_suffix": ", game asset, clean edges, no text, no watermark, no white borders, 1024x1024 pixel image, isolated single object with natural proportions, the object should NOT fill the entire canvas, leave generous empty background space around the object, object should occupy roughly 40-60% of the image area, do NOT stretch or pad the object to fill a square tile",
+    "alpha_suffix": ", solid flat uniform chromakey green background (#00FF00), the ENTIRE background must be pure bright green with NO variation NO gradients NO shadows, subject must NOT contain any green colors, sharp well-defined edges between subject and green background, NO white outline, NO white border around the subject, edges should blend naturally into the green background",
+    "seamless_suffix": ", perfectly seamless tileable texture, uniform flat ambient lighting from directly above, NO directional light source, NO shadows on edges, NO bright spots on corners, even brightness distribution across entire tile, all four edges must match when repeated"
+  },
+
+  "color_palettes": {
+    "dungeon": {
+      "shadow":    [30, 22, 18],
+      "dark":      [55, 40, 35],
+      "mid":       [90, 70, 58],
+      "light":     [140, 115, 90],
+      "highlight": [185, 165, 130],
+      "accent1":   [120, 60, 180],
+      "accent2":   [200, 120, 40]
+    },
+    "ice": {
+      "shadow":    [15, 25, 50],
+      "dark":      [30, 55, 95],
+      "mid":       [70, 120, 170],
+      "light":     [140, 195, 230],
+      "highlight": [210, 235, 250],
+      "accent1":   [100, 220, 255],
+      "accent2":   [180, 200, 240]
+    },
+    "lava": {
+      "shadow":    [35, 10, 5],
+      "dark":      [80, 20, 10],
+      "mid":       [140, 50, 20],
+      "light":     [210, 100, 30],
+      "highlight": [255, 180, 60],
+      "accent1":   [255, 120, 20],
+      "accent2":   [255, 200, 80]
+    }
+  },
+
+  "tile_categories": {
+    "floor": {
+      "source_size": [256, 256],
+      "display_size": [128, 128],
+      "sheet_cols": 8,
+      "sheet_rows": 4,
+      "has_alpha": false,
+      "seamless": true,
+      "themes": {
+        "dungeon": {
+          "count": 32,
+          "prompt_base": "top-down seamless stone floor tile, dark dungeon cobblestone",
+          "variants": [
+            {"name": "plain_stone", "count": 8, "prompt": "plain grey cobblestone, minimal detail, subtle cracks"},
+            {"name": "mossy_stone", "count": 6, "prompt": "moss-covered cobblestone, green patches on grey stone"},
+            {"name": "runic_stone", "count": 6, "prompt": "ancient rune-inscribed stone floor, faint purple glow in carved symbols"},
+            {"name": "damaged_stone", "count": 6, "prompt": "heavily cracked broken stone floor, debris fragments"},
+            {"name": "wet_stone", "count": 4, "prompt": "wet reflective stone floor, puddle edges, dark damp surface"},
+            {"name": "blood_stone", "count": 2, "prompt": "stone floor with old dried blood stains, dark red patches"}
+          ]
+        },
+        "ice": {
+          "count": 32,
+          "prompt_base": "top-down seamless frozen ground tile, ice cave floor",
+          "variants": [
+            {"name": "solid_ice", "count": 8, "prompt": "solid blue ice surface, translucent depth, air bubbles trapped inside"},
+            {"name": "cracked_ice", "count": 6, "prompt": "cracked ice floor, white fracture lines on blue surface"},
+            {"name": "snow_dusted", "count": 6, "prompt": "ice floor with snow dust layer, partially covered"},
+            {"name": "crystal_ice", "count": 6, "prompt": "ice with embedded crystal fragments, sparkling facets"},
+            {"name": "frozen_stone", "count": 4, "prompt": "stone floor with ice creeping over surface, frost patterns"},
+            {"name": "dark_ice", "count": 2, "prompt": "deep dark ice, something visible far below the surface"}
+          ]
+        },
+        "lava": {
+          "count": 32,
+          "prompt_base": "top-down seamless volcanic ground tile, hellscape floor",
+          "variants": [
+            {"name": "cooled_lava", "count": 8, "prompt": "cooled dark basalt rock, subtle red glow in cracks"},
+            {"name": "hot_cracks", "count": 6, "prompt": "dark rock with bright orange lava veins, glowing cracks"},
+            {"name": "obsidian", "count": 6, "prompt": "smooth black obsidian surface, glass-like reflections"},
+            {"name": "ash_ground", "count": 6, "prompt": "grey volcanic ash covered ground, smoke wisps"},
+            {"name": "ember_stone", "count": 4, "prompt": "stone with embedded glowing embers, scattered orange sparks"},
+            {"name": "magma_edge", "count": 2, "prompt": "ground at edge of magma pool, melting stone, intense heat glow"}
+          ]
+        }
+      }
+    },
+
+    "detail_overlay": {
+      "source_size": [256, 256],
+      "display_size": [128, 128],
+      "sheet_cols": 6,
+      "sheet_rows": 3,
+      "has_alpha": true,
+      "seamless": false,
+      "themes": {
+        "dungeon": {
+          "count": 18,
+          "prompt_base": "top-down dungeon floor detail overlay, transparent background",
+          "variants": [
+            {"name": "crack", "count": 4, "prompt": "floor crack lines, spider-web fracture pattern"},
+            {"name": "moss", "count": 4, "prompt": "moss patch growing in stone gaps, organic shape"},
+            {"name": "dust", "count": 3, "prompt": "dust and debris scatter, small pebbles and dirt"},
+            {"name": "stain", "count": 3, "prompt": "dark liquid stain, irregular puddle shape"},
+            {"name": "scratch", "count": 2, "prompt": "claw scratch marks on stone, three parallel lines"},
+            {"name": "rune_glow", "count": 2, "prompt": "faintly glowing magic rune circle, purple ethereal light"}
+          ]
+        }
+      }
+    },
+
+    "deco_props": {
+      "source_size": [128, 128],
+      "display_size": [64, 64],
+      "sheet_cols": 8,
+      "sheet_rows": 4,
+      "has_alpha": true,
+      "seamless": false,
+      "prop_style": true,
+      "themes": {
+        "dungeon": {
+          "count": 32,
+          "prompt_base": "top-down 2D game prop, dark fantasy dungeon, isolated on transparent background",
+          "variants": [
+            {"name": "skull_pile", "count": 3, "prompt": "pile of old skulls and bones on floor"},
+            {"name": "broken_pillar", "count": 3, "prompt": "broken stone pillar base, crumbled remains"},
+            {"name": "chest", "count": 3, "prompt": "old wooden treasure chest, iron bands, closed"},
+            {"name": "barrel", "count": 2, "prompt": "wooden barrel, dark aged wood, iron hoops"},
+            {"name": "cobweb", "count": 3, "prompt": "spider cobweb corner piece, thin white threads"},
+            {"name": "candle", "count": 2, "prompt": "melted candle in holder, wax dripping, warm glow"},
+            {"name": "book_pile", "count": 2, "prompt": "scattered old books and scrolls on floor"},
+            {"name": "chain", "count": 2, "prompt": "rusty iron chain segments on floor"},
+            {"name": "mushroom", "count": 3, "prompt": "glowing purple mushroom cluster, bioluminescent fungi"},
+            {"name": "crystal", "count": 3, "prompt": "purple crystal shard growing from floor, faceted gem"},
+            {"name": "blood_pool", "count": 2, "prompt": "small dark red blood pool, irregular edge"},
+            {"name": "magic_circle", "count": 2, "prompt": "arcane magic circle drawn on floor, geometric pattern, faint glow"},
+            {"name": "rubble", "count": 2, "prompt": "stone rubble and debris pile, collapsed wall pieces"}
+          ]
+        }
+      }
+    },
+
+    "wall_pieces": {
+      "source_size": [128, 256],
+      "display_size": [64, 128],
+      "sheet_cols": 8,
+      "sheet_rows": 2,
+      "has_alpha": true,
+      "seamless": false,
+      "themes": {
+        "dungeon": {
+          "count": 16,
+          "prompt_base": "top-down 2D dungeon wall segment, dark stone, transparent background",
+          "variants": [
+            {"name": "wall_straight", "count": 4, "prompt": "straight stone wall segment, brick pattern, top-down view"},
+            {"name": "wall_corner", "count": 4, "prompt": "stone wall corner piece, 90 degree turn, top-down view"},
+            {"name": "wall_end", "count": 2, "prompt": "stone wall end cap, rounded end, top-down view"},
+            {"name": "wall_damaged", "count": 3, "prompt": "damaged crumbling wall section, holes and cracks"},
+            {"name": "wall_door", "count": 3, "prompt": "wall with wooden door opening, arched doorway, top-down view"}
+          ]
+        }
+      }
+    },
+
+    "large_deco": {
+      "source_size": [256, 256],
+      "display_size": [128, 128],
+      "sheet_cols": 4,
+      "sheet_rows": 3,
+      "has_alpha": true,
+      "seamless": false,
+      "prop_style": true,
+      "themes": {
+        "dungeon": {
+          "count": 12,
+          "prompt_base": "top-down 2D large dungeon decoration, dark fantasy, transparent background",
+          "variants": [
+            {"name": "fountain", "count": 2, "prompt": "ancient stone fountain, cracked basin, dark water"},
+            {"name": "statue", "count": 2, "prompt": "stone gargoyle statue on pedestal, weathered"},
+            {"name": "altar", "count": 2, "prompt": "dark ritual altar, stone table with rune carvings"},
+            {"name": "throne", "count": 1, "prompt": "dark throne made of bones and stone, imposing"},
+            {"name": "portal", "count": 2, "prompt": "magical portal arch, swirling purple energy in center"},
+            {"name": "cage", "count": 1, "prompt": "iron hanging cage, prison cell, chains"},
+            {"name": "well", "count": 2, "prompt": "deep stone well, circular opening, dark inside"}
+          ]
+        }
+      }
+    }
+  }
+}

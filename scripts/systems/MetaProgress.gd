@@ -34,6 +34,7 @@ var unlocked: Dictionary = {}     # {node_id: current_level}
 var total_runs: int = 0
 var best_wave: int = 0
 var best_score: int = 0
+var abyss_layer: int = 1          # 深渊层数（跨局永久保存）
 
 # ── 单例 ────────────────────────────────────────────────
 static var instance: Node = null
@@ -50,6 +51,7 @@ func save() -> void:
 		"total_runs": total_runs,
 		"best_wave": best_wave,
 		"best_score": best_score,
+		"abyss_layer": abyss_layer,
 	}
 	var f := FileAccess.open("user://save.json", FileAccess.WRITE)
 	if f:
@@ -72,6 +74,7 @@ func load_save() -> void:
 	total_runs  = parsed.get("total_runs", 0)
 	best_wave   = parsed.get("best_wave", 0)
 	best_score  = parsed.get("best_score", 0)
+	abyss_layer = parsed.get("abyss_layer", 1)
 
 # ── 解锁操作 ────────────────────────────────────────────
 func can_unlock(node_id: String) -> bool:
@@ -103,14 +106,22 @@ func get_damage_bonus() -> float:
 	var bonus := 1.0
 	bonus += unlocked.get("atk1", 0) * 0.10
 	bonus += unlocked.get("atk2", 0) * 0.15
-	if unlocked.get("atk3", 0) > 0: bonus += 0.05  # 暴击基础加成
 	return bonus
+
+func get_crit_chance_bonus() -> float:
+	return 0.10 if unlocked.get("atk3", 0) > 0 else 0.0
+
+func get_crit_mult_bonus() -> float:
+	return 1.5 if unlocked.get("atk3", 0) > 0 else 1.0
 
 func get_attack_speed_bonus() -> float:
 	var bonus := 1.0
 	bonus += unlocked.get("atkspd1", 0) * 0.10
 	bonus += unlocked.get("atkspd2", 0) * 0.15
 	return bonus
+
+func has_regen2_invincible() -> bool:
+	return unlocked.get("regen2", 0) > 0
 
 func get_hp_bonus() -> float:
 	var bonus := 1.0
@@ -158,10 +169,17 @@ func on_run_ended(wave: int, score: int, survive_seconds: float, kills: int) -> 
 	earned += int(survive_seconds / 10)
 	earned = max(earned, 3)
 
-	# 应用难度魂石倍率
 	var gm = get_tree().root.find_child("Main", true, false)
+	# 应用难度魂石倍率
 	if gm and gm.has_meta("current_difficulty_mult"):
 		earned = int(earned * gm.get_meta("current_difficulty_mult"))
+	# 应用路线魂石倍率
+	if gm and gm.has_meta("route_soul_mult"):
+		earned = int(earned * gm.get_meta("route_soul_mult"))
+
+	# 胜利加成 x1.5
+	if gm and gm.get("game_over_flag") and not (gm.get("player") and gm.player.get("is_dead")):
+		earned = int(earned * 1.5)
 
 	soul_stones += earned
 	save()

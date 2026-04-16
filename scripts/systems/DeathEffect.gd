@@ -81,6 +81,18 @@ func setup(color: Color) -> void:
 	smoke.process_material = pm3
 	add_child(smoke)
 
+	# 死亡闪光光源：短暂亮起后快速衰减
+	var flash_light := PointLight2D.new()
+	flash_light.texture = _make_flash_texture(64)
+	flash_light.color = Color(color.r * 1.5, color.g * 1.2, 0.3, 1.0)
+	flash_light.energy = 2.5
+	flash_light.texture_scale = 4.0
+	flash_light.shadow_enabled = false
+	flash_light.z_index = -5
+	add_child(flash_light)
+	var light_tw = flash_light.create_tween()
+	light_tw.tween_property(flash_light, "energy", 0.0, 0.4).set_ease(Tween.EASE_IN)
+
 	# 同时触发三波
 	burst.emitting = true
 	sparks.emitting = true
@@ -89,3 +101,14 @@ func setup(color: Color) -> void:
 	# 1秒后清理
 	await get_tree().create_timer(1.0).timeout
 	queue_free()
+
+static func _make_flash_texture(sz: int) -> ImageTexture:
+	var img := Image.create(sz, sz, false, Image.FORMAT_RGBA8)
+	var center := Vector2(sz * 0.5, sz * 0.5)
+	for y in range(sz):
+		for x in range(sz):
+			var dist := Vector2(x, y).distance_to(center) / (sz * 0.5)
+			var alpha := clampf(1.0 - dist, 0.0, 1.0)
+			alpha = alpha * alpha
+			img.set_pixel(x, y, Color(1, 1, 1, alpha))
+	return ImageTexture.create_from_image(img)

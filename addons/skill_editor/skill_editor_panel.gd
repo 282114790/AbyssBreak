@@ -14,7 +14,7 @@ const CharRegistry      = "res://scripts/player/CharacterRegistry.gd"
 const RAW_SKILLS := [
 	# [id, display_name, description, max_level, cooldown, lvup_cd, damage, lvup_dmg, scene_path, pierce, proj_count]
 	["fireball",      "🔥 火焰术",    "向最近敌人发射追踪火球，范围爆炸",          5, 0.6,  -0.08, 25.0, 15.0, "res://scripts/skills/SkillFireball.gd",      1, 1],
-	["orbital",       "🛡 魔法护盾",  "绕身旋转的魔法护盾，持续伤害近身敌人",      5, 0.0,   0.0,  12.0, 10.0, "res://scripts/skills/SkillOrbital.gd",       99, 3],
+	["orbital",       "🛡 元素壁垒",  "环形魔法壁垒围绕旋转，撞击敌人造成伤害和击退，叠加减伤护盾",  5, 0.0,   0.0,  15.0, 10.0, "res://scripts/skills/SkillOrbital.gd",       99, 1],
 	["lightning",     "⚡ 雷击链",    "闪电在敌人间弹跳3次",                        5, 1.0,  -0.08, 25.0, 12.0, "res://scripts/skills/SkillLightning.gd",     3, 1],
 	["iceblade",      "❄ 冰刃术",    "直线冰刃穿透所有敌人",                       5, 0.8,  -0.08, 30.0, 18.0, "res://scripts/skills/SkillIceBlade.gd",      99, 2],
 	["frostzone",     "🌀 寒冰领域",  "范围内敌人减速50%并持续受伤",               5, 0.3,  -0.01, 10.0, 8.0,  "res://scripts/skills/SkillFrostZone.gd",     99, 1],

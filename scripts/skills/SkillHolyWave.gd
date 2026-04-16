@@ -23,16 +23,19 @@ func activate() -> void:
 	var sm = get_tree().get_first_node_in_group("sound_manager")
 	if sm: sm.play_shoot()
 
-	# 只保留扩散圆环，去掉中心爆发
+	_spawn_holy_burst()
 	_spawn_ring_wave()
+	var heal_amt = (5.0 + level * 3.0)
+	if owner_player.has_method("heal"):
+		owner_player.heal(heal_amt)
+	EventBus.damage_dealt.emit(owner_player.global_position, int(heal_amt), Color(0.2, 1.0, 0.4))
 
 # ── 中心爆发光粒子 ─────────────────────────────────────────
 func _spawn_holy_burst() -> void:
-	# 第一层：向外爆散的白金色光粒子（更小更克制）
 	var burst = GPUParticles2D.new()
 	burst.emitting = false
-	burst.amount = 32
-	burst.lifetime = 0.9
+	burst.amount = 48 + level * 8
+	burst.lifetime = 1.0
 	burst.explosiveness = 0.85
 	burst.one_shot = true
 	burst.local_coords = false
@@ -40,11 +43,11 @@ func _spawn_holy_burst() -> void:
 	var pm = ParticleProcessMaterial.new()
 	pm.direction = Vector3(0, -1, 0)
 	pm.spread = 180.0
-	pm.initial_velocity_min = 80.0
-	pm.initial_velocity_max = 200.0 + level * 15.0
+	pm.initial_velocity_min = 100.0
+	pm.initial_velocity_max = 250.0 + level * 20.0
 	pm.gravity = Vector3(0, 0, 0)
-	pm.scale_min = 2.0
-	pm.scale_max = 6.0
+	pm.scale_min = 3.0
+	pm.scale_max = 8.0
 	var g = Gradient.new()
 	g.set_color(0, Color(1.0, 1.0, 0.85, 1.0))   # 白金，不刺眼
 	g.set_color(1, Color(1.0, 0.85, 0.5, 0.0))
@@ -57,11 +60,10 @@ func _spawn_holy_burst() -> void:
 	burst.global_position = owner_player.global_position
 	burst.emitting = true
 
-	# 第二层：慢速飘散的白色光尘（数量减半）
 	var dust = GPUParticles2D.new()
 	dust.emitting = false
-	dust.amount = 12
-	dust.lifetime = 1.2
+	dust.amount = 20 + level * 4
+	dust.lifetime = 1.4
 	dust.explosiveness = 0.7
 	dust.one_shot = true
 	dust.local_coords = false
@@ -98,21 +100,19 @@ func _spawn_ring_wave() -> void:
 	ring.monitoring = true
 	ring.global_position = owner_player.global_position
 
-	# 视觉：只画一条细线圆环（Line2D），中间完全透明
 	var line = Line2D.new()
-	line.width = 3.0
-	line.default_color = Color(1.0, 1.0, 0.8, 0.9)
+	line.width = 4.5 + level * 0.3
+	line.default_color = Color(1.0, 1.0, 0.85, 0.95)
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
 	for i in range(65):  # 多一个点闭合
 		var a = (TAU / 64.0) * i
 		line.add_point(Vector2(cos(a) * 28, sin(a) * 28))
 	ring.add_child(line)
 
-	# 环边缘少量尾波粒子（仅在圆周上生成，不往内扩散）
 	var rim_particles = GPUParticles2D.new()
 	rim_particles.emitting = true
-	rim_particles.amount = 20
-	rim_particles.lifetime = 0.4
+	rim_particles.amount = 32 + level * 6
+	rim_particles.lifetime = 0.5
 	rim_particles.explosiveness = 0.0
 	rim_particles.local_coords = true
 
@@ -127,8 +127,8 @@ func _spawn_ring_wave() -> void:
 	rp.initial_velocity_min = 0.0
 	rp.initial_velocity_max = 0.0
 	rp.gravity = Vector3(0, 0, 0)
-	rp.scale_min = 1.5
-	rp.scale_max = 3.5
+	rp.scale_min = 2.0
+	rp.scale_max = 5.0
 	var rg = Gradient.new()
 	rg.set_color(0, Color(1.0, 0.95, 0.7, 1.0))
 	rg.set_color(1, Color(1.0, 0.8, 0.3, 0.0))
@@ -148,13 +148,11 @@ func _spawn_ring_wave() -> void:
 
 	_get_spawn_root().add_child(ring)
 
-	# 伤害
-	var dmg = get_current_damage()
 	var hit_enemies = {}
 	ring.body_entered.connect(func(body):
 		if body.is_in_group("enemies") and not hit_enemies.has(body.get_instance_id()):
 			hit_enemies[body.get_instance_id()] = true
-			body.take_damage(dmg)
+			deal_damage(body)
 	)
 
 	# 扩散：匀速扩散
@@ -174,8 +172,8 @@ func _spawn_ring_wave() -> void:
 		echo.collision_mask = 0
 		echo.global_position = owner_player.global_position
 		var echo_line = Line2D.new()
-		echo_line.width = 1.5
-		echo_line.default_color = Color(1.0, 1.0, 0.7, 0.5)
+		echo_line.width = 3.0
+		echo_line.default_color = Color(1.0, 1.0, 0.7, 0.6)
 		echo_line.joint_mode = Line2D.LINE_JOINT_ROUND
 		for i in range(65):
 			var a2 = (TAU / 64.0) * i

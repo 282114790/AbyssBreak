@@ -26,16 +26,34 @@ func _process(delta: float) -> void:
 		cooldown_timer -= delta
 		var action = "skill_q" if data.active_slot == 0 else "skill_e"
 		if Input.is_action_just_pressed(action) and cooldown_timer <= 0:
-			var current_cooldown = data.cooldown + data.level_up_cooldown * (level - 1)
-			cooldown_timer = max(current_cooldown, 0.1)
+			cooldown_timer = max(_get_effective_cooldown(), 0.1)
 			activate()
 		return
 	# 自动技能：倒计时自动触发
 	cooldown_timer -= delta
 	if cooldown_timer <= 0:
-		var current_cooldown = data.cooldown + data.level_up_cooldown * (level - 1)
-		cooldown_timer = max(current_cooldown, 0.1)
+		cooldown_timer = max(_get_effective_cooldown(), 0.1)
 		activate()
+
+func _get_effective_cooldown() -> float:
+	var base_cd = data.cooldown + data.level_up_cooldown * (level - 1)
+	var atk_spd = owner_player.attack_speed_multiplier if is_instance_valid(owner_player) else 1.0
+	if atk_spd > 0.0:
+		base_cd /= atk_spd
+	var syn_sys = _get_synergy_system()
+	if syn_sys and data:
+		var bonus = syn_sys.get_synergy_bonus_for_skill(data.id, data.element)
+		base_cd *= (1.0 - bonus.get("cooldown_reduction", 0.0))
+	return base_cd
+
+func _get_synergy_system():
+	if Engine.is_editor_hint(): return null
+	var sys = get_tree().get_first_node_in_group("synergy_system")
+	if sys == null and is_instance_valid(owner_player):
+		var main_node = get_tree().root.find_child("Main", true, false)
+		if main_node and main_node.get("synergy_system"):
+			sys = main_node.synergy_system
+	return sys
 
 func activate() -> void:
 	# 施法动画：通知 player 播放 cast 动画
@@ -62,9 +80,31 @@ func calc_damage(base_dmg: float = -1.0) -> Array:
 		dmg *= owner_player.damage_multiplier
 	var crit_chance = owner_player.crit_chance if owner_player else 0.05
 	var crit_mult   = owner_player.crit_mult   if owner_player else 1.5
+	# Synergy bonuses
+	var syn_sys = get_tree().get_first_node_in_group("synergy_system") if not Engine.is_editor_hint() else null
+	if syn_sys == null and is_instance_valid(owner_player) and not Engine.is_editor_hint():
+		var main_node = get_tree().root.find_child("Main", true, false)
+		if main_node and main_node.get("synergy_system"):
+			syn_sys = main_node.synergy_system
+	if syn_sys and data:
+		var bonus = syn_sys.get_synergy_bonus_for_skill(data.id, data.element)
+		dmg *= bonus["damage_mult"]
+		crit_chance += bonus["crit_bonus"]
+	# Character mechanic damage multiplier
+	if is_instance_valid(owner_player) and owner_player.has_method("get_mechanic_damage_mult"):
+		dmg *= owner_player.get_mechanic_damage_mult()
+	# Echo damage bonus from replaced skills
+	if is_instance_valid(owner_player) and owner_player.has_method("get_echo_damage_bonus"):
+		dmg += owner_player.get_echo_damage_bonus()
 	var is_crit = randf() < crit_chance
 	if is_crit:
 		dmg *= crit_mult
+	# 对数软上限：基于技能有效冷却归一化，多段低伤技能同样受约束
+	var effective_cd = _get_effective_cooldown() if data else 1.0
+	var dps_factor = clampf(1.0 / maxf(effective_cd, 0.1), 1.0, 10.0)
+	var threshold = 200.0 / dps_factor
+	if dmg > threshold:
+		dmg = threshold + threshold * log(dmg / threshold) / log(2.0)
 	return [dmg, is_crit]
 
 # 对单个敌人造成伤害（自动含暴击+分级音效，#5）
@@ -74,7 +114,20 @@ func deal_damage(enemy: Node, base_dmg: float = -1.0) -> void:
 	var final_dmg: float = result[0]
 	var is_crit: bool = result[1]
 	enemy.take_damage(final_dmg, is_crit)
-	# 分级音效
+	apply_affix_on_hit(enemy, final_dmg)
+	# Notify character mechanic
+	if is_instance_valid(owner_player) and owner_player.has_method("notify_skill_cast") and data:
+		owner_player.notify_skill_cast(data.element)
+	var syn_sys = _get_synergy_system()
+	if syn_sys and data:
+		var bonus = syn_sys.get_synergy_bonus_for_skill(data.id, data.element)
+		var freeze_dur = bonus.get("freeze_duration", 0.0)
+		if freeze_dur > 0.0 and is_instance_valid(enemy) and enemy.get("base_move_speed") != null:
+			var orig_spd = enemy.base_move_speed
+			enemy.base_move_speed = 0
+			get_tree().create_timer(freeze_dur).timeout.connect(func():
+				if is_instance_valid(enemy): enemy.base_move_speed = orig_spd
+			)
 	var snd = get_tree().get_first_node_in_group("sound_manager")
 	if snd:
 		if is_crit:
@@ -84,6 +137,39 @@ func deal_damage(enemy: Node, base_dmg: float = -1.0) -> void:
 
 func can_evolve(passive_ids: Array) -> bool:
 	return data.evolve_passive_id != "" and data.evolve_passive_id in passive_ids
+
+func has_affix(affix_id: String) -> bool:
+	return data and affix_id in data.affixes
+
+func apply_affix_on_hit(enemy: Node, final_dmg: float) -> void:
+	if not data or not is_instance_valid(enemy): return
+	if has_affix("lifesteal") and is_instance_valid(owner_player):
+		var heal_amt = final_dmg * 0.05
+		owner_player.heal(heal_amt)
+	if has_affix("chain"):
+		_affix_chain_hit(enemy, final_dmg * 0.5, 2)
+	if has_affix("explosive"):
+		_affix_explode(enemy.global_position, final_dmg * 0.3)
+
+func _affix_chain_hit(source_enemy: Node, dmg: float, bounces: int) -> void:
+	if bounces <= 0: return
+	var enemies = _get_enemies()
+	var nearest: Node = null
+	var min_dist = 200.0
+	for e in enemies:
+		if e == source_enemy or not is_instance_valid(e): continue
+		var d = source_enemy.global_position.distance_to(e.global_position)
+		if d < min_dist:
+			min_dist = d
+			nearest = e
+	if nearest and nearest.has_method("take_damage"):
+		nearest.take_damage(dmg, false)
+
+func _affix_explode(pos: Vector2, dmg: float) -> void:
+	var enemies = _get_enemies()
+	for e in enemies:
+		if is_instance_valid(e) and pos.distance_to(e.global_position) < 80:
+			e.take_damage(dmg, false)
 
 # 获取敌人列表：优先从 spawn_root 查找（支持编辑器 SubViewport），回退到主场景树
 func _get_enemies() -> Array:
@@ -96,7 +182,7 @@ func get_nearest_enemy() -> Node2D:
 	var enemies = _get_enemies()
 	if enemies.is_empty(): return null
 	# 优先精英
-	var elites = enemies.filter(func(e): return e.data and (e.data.get("is_elite") if e.data.get("is_elite") != null else false))
+	var elites = enemies.filter(func(e): return e.data and e.data.is_elite)
 	if not elites.is_empty():
 		elites.sort_custom(func(a,b): return global_position.distance_to(a.global_position) < global_position.distance_to(b.global_position))
 		return elites[0]
@@ -119,3 +205,17 @@ func get_nearest_enemy() -> Node2D:
 func get_enemies_in_radius(radius: float) -> Array:
 	var enemies = _get_enemies()
 	return enemies.filter(func(e): return global_position.distance_to(e.global_position) <= radius)
+
+func _emit_damage_dealt(pos: Vector2, amount: int, color: Color) -> void:
+	if Engine.is_editor_hint():
+		return
+	if EventBus.has_signal("damage_dealt"):
+		EventBus.damage_dealt.emit(pos, amount, color)
+
+# 伤害范围内的可破坏道具
+func damage_props_in_radius(center: Vector2, radius: float, dmg: float) -> void:
+	var props = get_tree().get_nodes_in_group("destructible_props")
+	for prop in props:
+		if is_instance_valid(prop) and center.distance_to(prop.global_position) <= radius:
+			if prop.has_method("hit_by_skill"):
+				prop.hit_by_skill(dmg, center)

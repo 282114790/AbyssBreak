@@ -1,0 +1,2 @@
+--- [void_sovereign_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of a colossal eldritch void entity made of dark red and black swirling energy with multiple glowing eyes and tentacle appendages, cosmic horror dark fantasy boss, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border

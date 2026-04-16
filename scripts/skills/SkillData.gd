@@ -11,17 +11,20 @@ enum SkillType {
 	MELEE,        # 近战（冲刺斩...）
 }
 
+enum Element { FIRE, ICE, LIGHTNING, DARK, HOLY, POISON, ARCANE, NONE }
+
 @export var id: String = ""
 @export var display_name: String = ""
 @export var description: String = ""
 @export var icon: Texture2D
 @export var skill_type: SkillType = SkillType.PROJECTILE
+@export var element: Element = Element.NONE
 @export var scene_path: String = ""         # 技能场景路径
 
 # 基础属性
 @export var damage: float = 10.0
 @export var cooldown: float = 1.0
-@export var speed: float = 200.0
+@export var speed: float = 400.0
 @export var range_radius: float = 0.0
 @export var pierce_count: int = 1          # 穿透次数
 @export var projectile_count: int = 1      # 同时发射数量
@@ -38,3 +41,6 @@ enum SkillType {
 # 主动技能配置
 @export var is_active: bool = false         # true=主动技能（需按键触发），false=自动触发
 @export var active_slot: int = 0            # 0=Q槽 1=E槽（is_active=true时有效）
+
+# 词缀系统
+var affixes: Array = []  # ["split", "lifesteal", "chain", "homing", "explosive", "piercing_plus"]

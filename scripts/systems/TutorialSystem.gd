@@ -12,9 +12,8 @@ var _move_steps := 0
 var _move_required := 30
 
 func _ready() -> void:
-	# 只在第一局触发（MetaProgress.runs_completed == 0）
 	var meta = get_tree().root.find_child("MetaProgress", true, false)
-	if meta and (meta.get("runs_completed") if meta.get("runs_completed") != null else 0) > 0:
+	if meta and meta.total_runs > 0:
 		queue_free()
 		return
 	_setup_hint_ui()

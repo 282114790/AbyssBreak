@@ -1,12 +1,18 @@
 @tool
 # SkillVoidRift.gd
-# 虚空裂缝：在随机位置生成黑洞，吸引并持续伤害敌人
 extends SkillBase
 class_name SkillVoidRift
 
 const RIFT_DURATION := 4.0
 const PULL_FORCE := 120.0
 const RIFT_RADIUS := 100.0
+
+var _vortex_tex: Texture2D = null
+
+func _get_vortex_texture() -> Texture2D:
+	if _vortex_tex == null:
+		_vortex_tex = load("res://assets/sprites/effects/skills/area_void_vortex.png")
+	return _vortex_tex
 
 func activate() -> void:
 	if not owner_player: return
@@ -17,7 +23,7 @@ func activate() -> void:
 
 func _spawn_rift() -> void:
 	var lv = level if data else 1
-	var count = 1 + lv / 3  # Lv3=2个, Lv5=2个
+	var count = 1 + lv / 3
 
 	for i in range(count):
 		var angle = TAU * i / count + randf() * 0.5
@@ -31,75 +37,75 @@ func _create_rift_at(pos: Vector2) -> void:
 	rift.global_position = pos
 	_get_spawn_root().add_child(rift)
 
-	# 视觉：黑洞圆圈 + 旋转环
-	for ring in range(3):
-		var r_node = Node2D.new()
-		rift.add_child(r_node)
-		var radius = 8.0 + ring * 10.0
-		var seg = 12
-		for s in range(seg):
-			var dot = ColorRect.new()
-			dot.size = Vector2(4, 4)
-			var a = TAU * s / seg
-			dot.position = Vector2(cos(a) * radius - 2, sin(a) * radius - 2)
-			var alpha = 0.6 - ring * 0.15
-			dot.color = Color(0.4, 0.0, 0.8, alpha)
-			r_node.add_child(dot)
+	var sprite = Sprite2D.new()
+	sprite.texture = _get_vortex_texture()
+	sprite.scale = Vector2(0.8, 0.8)
+	sprite.modulate = Color(0.8, 0.6, 1.0, 0.85)
+	rift.add_child(sprite)
 
-	# 中心黑点
-	var core = ColorRect.new()
-	core.size = Vector2(14, 14)
-	core.position = Vector2(-7, -7)
-	core.color = Color(0.05, 0.0, 0.1, 0.95)
-	rift.add_child(core)
+	var suction = GPUParticles2D.new()
+	suction.emitting = true
+	suction.amount = 24
+	suction.lifetime = 0.8
+	suction.local_coords = true
+	var pm = ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
+	pm.emission_ring_radius = RIFT_RADIUS
+	pm.emission_ring_inner_radius = RIFT_RADIUS * 0.8
+	pm.emission_ring_height = 0.0
+	pm.emission_ring_axis = Vector3(0, 0, 1)
+	pm.direction = Vector3(0, 0, 0)
+	pm.spread = 180.0
+	pm.initial_velocity_min = -60.0
+	pm.initial_velocity_max = -30.0
+	pm.gravity = Vector3.ZERO
+	pm.scale_min = 2.0
+	pm.scale_max = 5.0
+	var g = Gradient.new()
+	g.set_color(0, Color(0.6, 0.3, 1.0, 0.7))
+	g.set_color(1, Color(0.3, 0.0, 0.6, 0.0))
+	var gt = GradientTexture1D.new()
+	gt.gradient = g
+	pm.color_ramp = gt
+	suction.process_material = pm
+	rift.add_child(suction)
 
-	# 定时器驱动：持续吸引+伤害
-	var timer = 0.0
+	var glow = Sprite2D.new()
+	glow.texture = _get_vortex_texture()
+	glow.scale = Vector2(1.2, 1.2)
+	glow.modulate = Color(0.5, 0.2, 0.8, 0.25)
+	rift.add_child(glow)
+
 	var duration = RIFT_DURATION + lv * 0.5
 	var dmg = get_current_damage()
-	var tick_acc = 0.0
-	var rot_acc = 0.0
+	_run_rift_logic(rift, sprite, duration, dmg)
 
-	rift.set_script(null)
-	# 用 SceneTreeTimer 替代，避免 set_script 冲突
-	_run_rift_logic(rift, duration, dmg)
-
-func _run_rift_logic(rift: Node2D, duration: float, dmg: float) -> void:
+func _run_rift_logic(rift: Node2D, sprite: Sprite2D, duration: float, dmg: float) -> void:
 	var elapsed := 0.0
 	var tick := 0.0
-	var rot := 0.0
 
 	while elapsed < duration:
 		await get_tree().process_frame
 		var d = get_process_delta_time()
 		elapsed += d
 		tick += d
-		rot += d * 2.0
 
 		if not is_instance_valid(rift):
 			return
 
-		# 旋转视觉
-		for child in rift.get_children():
-			if child is Node2D:
-				child.rotation += d * (1.5 + rift.get_children().find(child) * 0.3)
+		sprite.rotation += d * 3.0
 
-		# 吸引+伤害
 		if tick >= 0.3:
 			tick = 0.0
 			for enemy in _get_enemies():
 				if not is_instance_valid(enemy): continue
 				var dist = enemy.global_position.distance_to(rift.global_position)
 				if dist < RIFT_RADIUS:
-					# 吸引
 					var dir = (rift.global_position - enemy.global_position).normalized()
-					enemy.global_position += dir * PULL_FORCE * 0.3
-					# 伤害
-					if enemy.has_method("take_damage"):
-						enemy.take_damage(dmg * 0.4)
-						EventBus.damage_dealt.emit(enemy.global_position, int(dmg * 0.4), Color(0.5, 0.0, 1.0))
+					var pull = PULL_FORCE * 0.3 * (1.0 + level * 0.15)
+					enemy.global_position += dir * pull
+					deal_damage(enemy, dmg * 0.4)
 
-		# 淡出
 		var fade = 1.0 - (elapsed / duration)
 		if is_instance_valid(rift):
 			rift.modulate.a = fade

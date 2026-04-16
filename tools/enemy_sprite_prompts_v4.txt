@@ -1,0 +1,8 @@
+--- [boss_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 8 frames arranged horizontally in a single row, total image size 2048x280 pixels, walk cycle of a massive demon overlord with dark purple robes and glowing red eyes holding a twisted staff, towering menacing dark fantasy boss creature, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border
+
+--- [void_sovereign_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 8 frames arranged horizontally in a single row, total image size 2048x280 pixels, walk cycle of a colossal void entity made of dark red and black swirling energy with multiple glowing eyes and tentacle-like appendages, eldritch horror dark fantasy boss, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border
+
+--- [necromancer_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of an undead necromancer in tattered dark purple robes with a floating skull staff and ghostly wisps, dark fantasy style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border

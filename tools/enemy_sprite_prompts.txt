@@ -1,0 +1,20 @@
+--- [splitter_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 6 frames of a walk cycle animation of a small green insect-like creature with a segmented body that looks like it's about to split apart, glowing green eyes, dark fantasy dungeon crawler style, transparent background, each frame roughly 170x170 pixels side by side in one row, no text, no labels, no UI elements
+
+--- [shadow_assassin_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 6 frames of a walk cycle animation of a shadowy hooded assassin figure, semi-transparent dark purple body, holding two daggers, ghostly wisps trailing behind, dark fantasy dungeon crawler style, transparent background, each frame roughly 170x170 pixels side by side in one row, no text, no labels
+
+--- [shield_guard_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 6 frames of a walk cycle animation of a heavy armored knight guard, blue-gray plate armor, carrying a large tower shield in front, sturdy and slow-looking, dark fantasy dungeon crawler style, transparent background, each frame roughly 170x170 pixels side by side in one row, no text, no labels
+
+--- [necromancer_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 6 frames of a walk cycle animation of an undead necromancer in a tattered purple robe, holding a skull-topped staff, pale skin, glowing purple eyes, dark fantasy dungeon crawler style, transparent background, each frame roughly 170x170 pixels side by side in one row, no text, no labels
+
+--- [patrol_puppet_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 6 frames of a walk cycle animation of a mechanical wooden puppet golem, yellow glowing joints and eyes, articulated limbs with visible joints, marching patrol pose, dark fantasy dungeon crawler style, transparent background, each frame roughly 170x170 pixels side by side in one row, no text, no labels
+
+--- [abyss_knight_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 8 frames of a walk cycle animation of a large imposing boss knight in deep blue dark armor, wielding a massive great sword, glowing blue visor, cape flowing, dark fantasy dungeon crawler style, transparent background, each frame roughly 256x280 pixels side by side in one row, no text, no labels, boss enemy
+
+--- [void_sovereign_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 8 frames of a walk cycle animation of a massive eldritch boss creature, red and black coloring, floating dark tendrils and void rifts emanating from body, multiple glowing red eyes, dark fantasy lovecraftian dungeon crawler style, transparent background, each frame roughly 256x280 pixels side by side in one row, no text, no labels, boss enemy

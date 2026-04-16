@@ -1,0 +1,2 @@
+--- [abyss_knight_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, consistent walk cycle animation of a single dark knight character in heavy blue-black plate armor with glowing blue visor and a long sword, same character in every frame with only leg and arm movement, dark fantasy pixel art style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border

@@ -1,0 +1,29 @@
+--- [splitter_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a small green insect-like creature with segmented body that looks like it is splitting apart, glowing green eyes, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, each frame approximately 170x170 pixels
+
+--- [shadow_assassin_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a dark hooded assassin figure with semi-transparent dark purple body holding two daggers with ghostly wisps trailing behind, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 170x170 pixels
+
+--- [shield_guard_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a heavy armored knight guard in blue-gray plate armor carrying a large tower shield, sturdy and slow-looking, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 170x170 pixels
+
+--- [necromancer_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of an undead necromancer in tattered purple robe holding a skull-topped staff with pale skin and glowing purple eyes, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 170x170 pixels
+
+--- [patrol_puppet_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a mechanical wooden puppet golem with yellow glowing joints and eyes and articulated limbs in marching pose, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 170x170 pixels
+
+--- [abyss_knight_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 8 frames side by side in one row, walk cycle animation of a large imposing boss knight in deep blue dark heavy armor wielding a massive great sword with glowing blue visor and flowing cape, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 256x280 pixels, boss enemy
+
+--- [void_sovereign_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 8 frames side by side in one row, walk cycle animation of a massive eldritch boss creature with red and black coloring and floating dark tendrils and void rifts and multiple glowing red eyes, dark fantasy lovecraftian dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 256x280 pixels, boss enemy
+
+--- [split_child_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a tiny bright green insect larva with a soft round body, simple cute bug creature, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 128x128 pixels, small enemy
+
+--- [minion_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a small skeletal undead servant minion in tattered white rags with glowing eyes, simple bone creature, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 128x128 pixels, small enemy
+
+--- [abyss_minion_walk_sheet.png] ---
+Pixel art horizontal sprite sheet, exactly 6 frames side by side in one row, walk cycle animation of a small dark demonic imp servant with dark purple skin and tiny horns, miniature demon creature, dark fantasy dungeon crawler style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, each frame approximately 128x128 pixels, small enemy

@@ -19,23 +19,20 @@ func _ready() -> void:
 	collision_mask = 1
 	monitoring = true
 
-	# 精灵图
 	_sprite = Sprite2D.new()
-	_sprite.texture = load("res://assets/sprites/effects/gem.png")
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_sprite.scale = Vector2(2.5, 2.5)
+	_sprite.texture = load("res://assets/sprites/effects/exp_gem.png")
+	_sprite.scale = Vector2(0.45, 0.45)
 	add_child(_sprite)
 
-	# 碰撞体
 	var col = CollisionShape2D.new()
 	var circle = CircleShape2D.new()
 	circle.radius = 10.0
 	col.shape = circle
 	add_child(col)
 
-	# 旋转动画
 	var tween = create_tween().set_loops()
-	tween.tween_property(_sprite, "rotation_degrees", 360.0, 1.2)
+	tween.tween_property(_sprite, "scale", Vector2(0.5, 0.5), 0.5).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(_sprite, "scale", Vector2(0.45, 0.45), 0.5).set_ease(Tween.EASE_IN_OUT)
 
 	body_entered.connect(_on_collected)
 
@@ -59,7 +56,7 @@ func attract() -> void:
 	is_attracting = true
 	# 吸附时宝石变亮
 	if _sprite:
-		_sprite.modulate = Color(1.5, 1.5, 1.0)
+		_sprite.modulate = Color(1.3, 1.3, 1.5)
 
 func _collect() -> void:
 	if not is_instance_valid(player):
@@ -69,6 +66,7 @@ func _collect() -> void:
 	if snd:
 		snd.play_gem_pickup()
 	EventBus.gem_collected.emit(exp_value)
+	EventBus.emit_signal("pickup_float_text", global_position, "+%d EXP" % exp_value, Color(0.5, 0.8, 1.0))
 	queue_free()
 
 func _on_collected(body: Node2D) -> void:

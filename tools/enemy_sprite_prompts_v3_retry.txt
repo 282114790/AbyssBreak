@@ -1,0 +1,8 @@
+--- [fire_sprite_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of a small floating fire elemental spirit made of bright orange and yellow flames with glowing ember core, dark fantasy pixel art style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border
+
+--- [splitter_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of a mutant insect creature with segmented yellow-green carapace and multiple legs, dark fantasy pixel art style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border
+
+--- [shadow_assassin_walk_sheet.png] ---
+Pixel art sprite sheet with exactly 6 frames arranged horizontally in a single row, total image size 1020x170 pixels, walk cycle of a shadowy rogue wrapped in dark purple cloak holding glowing violet daggers, dark fantasy pixel art style, SOLID BRIGHT GREEN BACKGROUND (#00FF00), no watermark, no text, no labels, no UI elements, no border

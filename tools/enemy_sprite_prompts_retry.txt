@@ -1,0 +1,2 @@
+--- [splitter_walk_sheet.png] ---
+Pixel art horizontal sprite sheet showing 6 frames of a walk cycle animation of a small green insect-like creature with a segmented body that looks like it's about to split apart, glowing green eyes, dark fantasy dungeon crawler style, transparent background, each frame roughly 170x170 pixels side by side in one row, no text, no labels, no UI elements

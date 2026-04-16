@@ -1,5 +1,6 @@
 # World.gd
-# 世界初始化 - 程序生成地图背景和初始内容
+# [已弃用] 旧的世界初始化脚本，功能已完全迁移至 Main.gd
+# 保留文件仅作参考，不应被任何场景或脚本引用
 extends Node2D
 
 # 场景预加载（无需美术资源，全程序生成）
@@ -22,7 +23,7 @@ func _ready() -> void:
 func _setup_background() -> void:
 	# TileMap 地砖背景
 	var bg = Node2D.new()
-	bg.set_script(load("res://scripts/systems/TileMapBackground.gd"))
+	bg.set_script(load("res://scripts/systems/TileMapBackgroundV2.gd"))
 	bg.name = "TileMapBackground"
 	# 根据难度切换地图主题
 	var main = get_tree().root.find_child("Main", true, false)

@@ -1,11 +1,22 @@
 @tool
 # SkillTimeSlow.gd
-# 时间减速：短暂减慢所有敌人速度80%，持续时间随等级增加
 extends SkillBase
 class_name SkillTimeSlow
 
-const SLOW_RATIO := 0.2  # 减速后为原速20%
+const SLOW_RATIO := 0.2
 var _active := false
+var _time_aura_tex: Texture2D = null
+var _time_particle_tex: Texture2D = null
+
+func _get_time_aura_texture() -> Texture2D:
+	if _time_aura_tex == null:
+		_time_aura_tex = load("res://assets/sprites/effects/skills/area_time_aura.png")
+	return _time_aura_tex
+
+func _get_time_particle_texture() -> Texture2D:
+	if _time_particle_tex == null:
+		_time_particle_tex = load("res://assets/sprites/effects/skills/particle_time_fragment.png")
+	return _time_particle_tex
 
 func activate() -> void:
 	if not owner_player or _active: return
@@ -16,34 +27,44 @@ func activate() -> void:
 func _do_slow() -> void:
 	_active = true
 	var lv = level if data else 1
-	var duration = 2.0 + lv * 0.5  # Lv1=2.5s, Lv5=4.5s
+	var duration = 2.0 + lv * 0.5
 
-	# 视觉：蓝紫色全屏闪光
 	_show_slow_vfx(duration)
 
-	# 减速所有敌人
-	var enemies = _get_enemies()
 	var original_speeds := {}
-	for enemy in enemies:
-		if not is_instance_valid(enemy): continue
-		if enemy.has_meta("base_speed"):
-			original_speeds[enemy] = enemy.get_meta("base_speed")
-		elif "speed" in enemy:
+	var slowed_set := {}
+
+	var _apply_slow = func(enemy: Node) -> void:
+		if not is_instance_valid(enemy): return
+		if slowed_set.has(enemy.get_instance_id()): return
+		slowed_set[enemy.get_instance_id()] = true
+		if "speed" in enemy:
 			original_speeds[enemy] = enemy.speed
 			enemy.speed *= SLOW_RATIO
 		elif "move_speed" in enemy:
 			original_speeds[enemy] = enemy.move_speed
 			enemy.move_speed *= SLOW_RATIO
+		if enemy.get("visual") != null and is_instance_valid(enemy.visual):
+			enemy.visual.modulate = Color(0.5, 0.7, 1.0)
 
-	await get_tree().create_timer(duration).timeout
+	for enemy in _get_enemies():
+		_apply_slow.call(enemy)
 
-	# 恢复速度
+	var elapsed := 0.0
+	while elapsed < duration:
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+		for enemy in _get_enemies():
+			_apply_slow.call(enemy)
+
 	for enemy in original_speeds:
 		if not is_instance_valid(enemy): continue
 		if "speed" in enemy:
 			enemy.speed = original_speeds[enemy]
 		elif "move_speed" in enemy:
 			enemy.move_speed = original_speeds[enemy]
+		if enemy.get("visual") != null and is_instance_valid(enemy.visual):
+			enemy.visual.modulate = Color(1.0, 1.0, 1.0)
 
 	_active = false
 
@@ -54,14 +75,34 @@ func _show_slow_vfx(duration: float) -> void:
 	vfx.z_index = 5
 	_get_spawn_root().add_child(vfx)
 
-	# 时钟慢指针效果：辐射状蓝色光线
-	for i in range(8):
-		var ray = ColorRect.new()
-		ray.size = Vector2(3, 120)
-		ray.position = Vector2(-1.5, 0)
-		ray.rotation = TAU * i / 8
-		ray.color = Color(0.3, 0.5, 1.0, 0.4)
-		vfx.add_child(ray)
+	var sprite = Sprite2D.new()
+	sprite.texture = _get_time_aura_texture()
+	sprite.scale = Vector2(0.8, 0.8)
+	sprite.modulate = Color(1.0, 0.95, 0.7, 0.6)
+	vfx.add_child(sprite)
+
+	var particles = GPUParticles2D.new()
+	particles.emitting = true
+	particles.amount = 12
+	particles.lifetime = 1.0
+	particles.local_coords = false
+	var pm = ParticleProcessMaterial.new()
+	pm.direction = Vector3(0, -1, 0)
+	pm.spread = 180.0
+	pm.initial_velocity_min = 10.0
+	pm.initial_velocity_max = 30.0
+	pm.gravity = Vector3(0, -15, 0)
+	pm.scale_min = 0.8
+	pm.scale_max = 1.5
+	var g = Gradient.new()
+	g.set_color(0, Color(1.0, 0.9, 0.5, 0.8))
+	g.set_color(1, Color(1.0, 0.8, 0.3, 0.0))
+	var gt = GradientTexture1D.new()
+	gt.gradient = g
+	pm.color_ramp = gt
+	particles.process_material = pm
+	particles.texture = _get_time_particle_texture()
+	vfx.add_child(particles)
 
 	var elapsed := 0.0
 	while elapsed < duration:
@@ -69,8 +110,9 @@ func _show_slow_vfx(duration: float) -> void:
 		elapsed += get_process_delta_time()
 		if not is_instance_valid(vfx): return
 		vfx.global_position = owner_player.global_position
-		var pulse = 0.7 + sin(elapsed * 4.0) * 0.3
-		vfx.modulate = Color(0.4, 0.6, 1.0, pulse * (1.0 - elapsed/duration))
+		sprite.rotation += get_process_delta_time() * 0.5
+		var pulse = 0.5 + sin(elapsed * 3.0) * 0.2
+		vfx.modulate = Color(1.0, 0.95, 0.7, pulse * (1.0 - elapsed / duration))
 
 	if is_instance_valid(vfx):
 		vfx.queue_free()

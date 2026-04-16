@@ -12,22 +12,14 @@ func _ready() -> void:
 	collision_mask = 1
 	body_entered.connect(_on_body_entered)
 
-	# 绿色气泡外观
-	var circle = ColorRect.new()
-	circle.size = Vector2(28, 28)
-	circle.position = Vector2(-14, -14)
-	circle.color = Color(0.2, 0.9, 0.3, 0.85)
-	add_child(circle)
-
-	var lbl = Label.new()
-	lbl.text = "💚"
-	lbl.add_theme_font_size_override("font_size", 22)
-	lbl.position = Vector2(-12, -16)
-	add_child(lbl)
+	var sprite = Sprite2D.new()
+	sprite.texture = load("res://assets/sprites/effects/heal_heart.png")
+	sprite.scale = Vector2(0.5, 0.5)
+	add_child(sprite)
 
 	var col = CollisionShape2D.new()
 	var cs = CircleShape2D.new()
-	cs.radius = 20.0
+	cs.radius = 16.0
 	col.shape = cs
 	add_child(col)
 
@@ -51,6 +43,7 @@ func _on_body_entered(body: Node) -> void:
 	if _collected or not body.is_in_group("player"): return
 	_collected = true
 	body.heal(heal_amount)
+	EventBus.emit_signal("pickup_float_text", global_position, "+%d HP 回复" % int(heal_amount), Color(0.3, 1.0, 0.4))
 	# 拾取特效
 	var fx = GPUParticles2D.new()
 	fx.emitting = false

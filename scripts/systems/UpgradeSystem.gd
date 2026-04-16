@@ -17,11 +17,60 @@ static var evolve_table: Dictionary = {
 	},
 	"orbital": {
 		"passive_id": "boots",
-		"evolved_name": "🌪 死亡旋涡",
-		"evolved_desc": "超速旋涡护盾，体积×2，damage×2",
+		"evolved_name": "🌪 湮灭壁垒",
+		"evolved_desc": "三层壁垒全开，伤害×2，击退×2，减伤上限提升至60%",
 		"damage_mult": 2.0,
 		"evolved_id": "orbital_evolved"
-	}
+	},
+	"poison_cloud": {
+		"passive_id": "toxic_vial",
+		"evolved_name": "☠ 瘟疫瘴气",
+		"evolved_desc": "毒雾范围×2，持续伤害×2.5，中毒敌人死亡时扩散",
+		"damage_mult": 2.5,
+		"evolved_id": "poison_evolved"
+	},
+	"arcane_orb": {
+		"passive_id": "power_ring",
+		"evolved_name": "💠 奥术风暴",
+		"evolved_desc": "弹幕数量×2，爆炸时释放连锁闪电",
+		"damage_mult": 2.0,
+		"evolved_id": "arcane_evolved"
+	},
+	"lightning": {
+		"passive_id": "mana_crystal",
+		"evolved_name": "⚡ 雷神审判",
+		"evolved_desc": "闪电弹跳次数×2，每次弹跳伤害递增而非递减",
+		"damage_mult": 2.5,
+		"evolved_id": "lightning_evolved"
+	},
+	"iceblade": {
+		"passive_id": "iron_heart",
+		"evolved_name": "❄ 霜寒之怒",
+		"evolved_desc": "冰刃变为三向扇形，命中敌人冻结1秒",
+		"damage_mult": 2.0,
+		"evolved_id": "iceblade_evolved"
+	},
+	"blood_nova": {
+		"passive_id": "shadow_cloak",
+		"evolved_name": "🩸 血色黄昏",
+		"evolved_desc": "血月脉冲持续环绕，HP越低范围越大，击杀回血",
+		"damage_mult": 2.5,
+		"evolved_id": "blood_nova_evolved"
+	},
+	"meteor_shower": {
+		"passive_id": "mana_crystal",
+		"evolved_name": "☄ 天罚陨星",
+		"evolved_desc": "陨石数量×3，落点产生持续燃烧区域",
+		"damage_mult": 2.0,
+		"evolved_id": "meteor_evolved"
+	},
+	"chain_lance": {
+		"passive_id": "iron_heart",
+		"evolved_name": "🏹 湮灭之枪",
+		"evolved_desc": "长枪穿透无限敌人，尾迹留下伤害区域",
+		"damage_mult": 2.5,
+		"evolved_id": "chain_lance_evolved"
+	},
 }
 
 # 诅咒选项池（风险换高收益）
@@ -56,18 +105,35 @@ static var curse_pool: Array = [
 	},
 ]
 
-# 生成升级选项（5选2）
-static func generate_choices(player: Player) -> Array:
-	var choices = []
+# 生成升级选项（加权随机采样）
+static func generate_choices(player: Player, max_choices: int = 5) -> Array:
 	var pool = _build_pool(player)
-	pool.shuffle()
-	# 进化选项优先排到最前（不打乱）
+	# 进化选项强制优先
 	var evolve_choices = pool.filter(func(c): return c.get("type") == "evolve")
 	var normal_choices = pool.filter(func(c): return c.get("type") != "evolve")
-	normal_choices.shuffle()
-	var final_pool = evolve_choices + normal_choices
-	for i in range(min(5, final_pool.size())):
-		choices.append(final_pool[i])
+
+	var choices: Array = []
+	choices.append_array(evolve_choices)
+
+	# 剩余名额用加权随机从 normal_choices 中采样
+	var remaining = max_choices - choices.size()
+	for _i in range(remaining):
+		if normal_choices.is_empty():
+			break
+		var total_weight := 0.0
+		for c in normal_choices:
+			total_weight += c.get("weight", 1)
+		var roll := randf() * total_weight
+		var cumulative := 0.0
+		var picked_idx := 0
+		for j in range(normal_choices.size()):
+			cumulative += normal_choices[j].get("weight", 1)
+			if roll <= cumulative:
+				picked_idx = j
+				break
+		choices.append(normal_choices[picked_idx])
+		normal_choices.remove_at(picked_idx)
+
 	return choices
 
 static func _build_pool(player: Player) -> Array:
@@ -88,11 +154,20 @@ static func _build_pool(player: Player) -> Array:
 				"weight": 3
 			})
 
-	# 新技能（最多6个槽位）
-	if player.skills.size() < player.max_skill_slots:
-		var owned_ids = player.skills.map(func(s): return s.data.id)
-		for sd in available_skills:
-			if sd.id not in owned_ids:
+	# 新技能
+	var owned_ids = player.skills.map(func(s): return s.data.id)
+	var slots_full = player.skills.size() >= player.max_skill_slots
+	for sd in available_skills:
+		if sd.id not in owned_ids:
+			if slots_full:
+				pool.append({
+					"type": "skill_replace",
+					"skill_id": sd.id,
+					"display_name": "替换: " + sd.display_name,
+					"description": sd.description + "\n（需替换一个已有技能，残响保留50%效果）",
+					"weight": 1
+				})
+			else:
 				pool.append({
 					"type": "skill_new",
 					"skill_id": sd.id,
@@ -119,6 +194,31 @@ static func _build_pool(player: Player) -> Array:
 	if available_curses.size() > 0 and randf() < 0.30:
 		available_curses.shuffle()
 		pool.append(available_curses[0])
+
+	# 武器词缀（玩家有至少1个可加词缀的技能时出现）
+	var affix_defs = [
+		{"id": "split",         "name": "分裂",   "desc": "投射物命中后分裂为2个小弹"},
+		{"id": "lifesteal",     "name": "吸血",   "desc": "伤害的5%转为治疗"},
+		{"id": "chain",         "name": "连锁",   "desc": "攻击跳跃到附近1个敌人"},
+		{"id": "explosive",     "name": "爆裂",   "desc": "命中时对周围敌人造成30%溅射伤害"},
+		{"id": "piercing_plus", "name": "穿透强化", "desc": "穿透次数+2"},
+		{"id": "homing",        "name": "追踪强化", "desc": "投射物追踪能力大幅提升"},
+	]
+	var eligible_skills = player.skills.filter(func(s): return s.data and s.data.affixes.size() < 3)
+	if eligible_skills.size() > 0 and randf() < 0.35:
+		var sk = eligible_skills[randi() % eligible_skills.size()]
+		var available_affixes = affix_defs.filter(func(a): return a["id"] not in sk.data.affixes)
+		if available_affixes.size() > 0:
+			available_affixes.shuffle()
+			var af = available_affixes[0]
+			pool.append({
+				"type": "affix",
+				"skill_id": sk.data.id,
+				"affix_id": af["id"],
+				"display_name": sk.data.display_name + " +" + af["name"],
+				"description": af["desc"],
+				"weight": 4
+			})
 
 	# 回血选项（保底）
 	pool.append({

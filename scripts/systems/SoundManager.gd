@@ -8,6 +8,13 @@ var _pool_size := 6
 var _bgm_player: AudioStreamPlayer = null
 var _current_bgm: String = ""
 
+# 音效节流：防止大量敌人同时受击时音效过载
+var _throttle_interval_ms := {
+	"hit": 120, "crit": 160, "enemy_die": 100, "gem_pickup": 80,
+}
+var _last_play_time := {}     # key -> last play timestamp (msec)
+var _accumulated_damage := {} # key -> accumulated damage since last play
+
 const BUS_NORMAL := "SFX_Normal"
 const BUS_SKILL  := "SFX_Skill"
 const BUS_CRIT   := "SFX_Crit"
@@ -57,10 +64,30 @@ func _play_on(bus_name: String, path: String, volume_db: float = 0.0, pitch: flo
 	p.pitch_scale = pitch
 	p.play()
 
+func _can_play_throttled(key: String, damage: float = 0.0) -> bool:
+	var now = Time.get_ticks_msec()
+	var interval = _throttle_interval_ms.get(key, 0)
+	if interval <= 0:
+		return true
+	var last = _last_play_time.get(key, 0)
+	if now - last < interval:
+		_accumulated_damage[key] = _accumulated_damage.get(key, 0.0) + damage
+		return false
+	_last_play_time[key] = now
+	var acc = _accumulated_damage.get(key, 0.0) + damage
+	_accumulated_damage[key] = 0.0
+	return true
+
+func _get_accumulated(key: String) -> float:
+	var acc = _accumulated_damage.get(key, 0.0)
+	_accumulated_damage[key] = 0.0
+	return acc
+
 # ─── 普通攻击 ─────────────────────────────────────
 func play_hit(damage: float = 10.0) -> void:
-	# 伤害越高音量越大（10~100映射-8~0 dB）
-	var vol = clamp(lerp(-8.0, 0.0, (damage - 10.0) / 90.0), -10.0, 2.0)
+	if not _can_play_throttled("hit", damage): return
+	var total = _get_accumulated("hit")
+	var vol = clamp(lerp(-8.0, 0.0, (total - 10.0) / 90.0), -10.0, 2.0)
 	var pitch = randf_range(0.9, 1.1)
 	_play_on(BUS_NORMAL, "res://assets/sfx/hit.wav", vol, pitch)
 
@@ -81,12 +108,14 @@ func play_evolve() -> void:
 
 # ─── 暴击 ─────────────────────────────────────────
 func play_crit(damage: float = 30.0) -> void:
-	# 暴击：音调偏高 + 独立总线，让玩家有明显区分感
-	var vol = clamp(lerp(-4.0, 2.0, (damage - 15.0) / 60.0), -6.0, 4.0)
+	if not _can_play_throttled("crit", damage): return
+	var total = _get_accumulated("crit")
+	var vol = clamp(lerp(-4.0, 2.0, (total - 15.0) / 60.0), -6.0, 4.0)
 	_play_on(BUS_CRIT, "res://assets/sfx/hit.wav", vol, 1.35)
 
 # ─── 死亡 ─────────────────────────────────────────
 func play_enemy_die() -> void:
+	if not _can_play_throttled("enemy_die"): return
 	_play_on(BUS_DEATH, "res://assets/sfx/enemy_die.wav", -2.0, randf_range(0.85, 1.15))
 
 func play_player_hurt(damage: float = 10.0) -> void:
@@ -94,7 +123,9 @@ func play_player_hurt(damage: float = 10.0) -> void:
 	_play_on(BUS_DEATH, "res://assets/sfx/player_hurt.wav", vol)
 
 # ─── UI ───────────────────────────────────────────
-func play_gem_pickup() -> void:  _play_on(BUS_UI, "res://assets/sfx/gem_pickup.wav", -8.0)
+func play_gem_pickup() -> void:
+	if not _can_play_throttled("gem_pickup"): return
+	_play_on(BUS_UI, "res://assets/sfx/gem_pickup.wav", -8.0)
 func play_level_up() -> void:    _play_on(BUS_UI, "res://assets/sfx/level_up.wav", 0.0)
 func play_relic_get() -> void:   _play_on(BUS_UI, "res://assets/sfx/evolve.wav", -3.0, 0.85)
 

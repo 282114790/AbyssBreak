@@ -22,7 +22,10 @@ func _register_all() -> void:
 	mage.pickup_mult   = 1.0
 	mage.regen_base    = 0.0
 	mage.start_skill_ids = ["fireball"]
-	mage.trait_desc    = "火球伤害 +20%"
+	mage.trait_desc    = "连续释放同元素技能，伤害逐次递增（最高+60%）"
+	mage.element_affinity = [SkillData.Element.FIRE, SkillData.Element.HOLY]
+	mage.unique_mechanic = "elemental_chain"
+	mage.mechanic_desc = "连续同元素施法：每次+15%伤害，最高4层"
 	all_characters.append(mage)
 
 	var warrior = CharacterDataScript.new()
@@ -37,7 +40,10 @@ func _register_all() -> void:
 	warrior.pickup_mult   = 0.8
 	warrior.regen_base    = 3.0
 	warrior.start_skill_ids = ["iceblade"]
-	warrior.trait_desc    = "最大HP×1.8，每秒回血3"
+	warrior.trait_desc    = "受击后下一次技能伤害翻倍（受创反击）"
+	warrior.element_affinity = [SkillData.Element.ICE, SkillData.Element.DARK]
+	warrior.unique_mechanic = "revenge_strike"
+	warrior.mechanic_desc = "受击后8秒内下一次技能伤害×2"
 	warrior.walk_sheet_path  = "res://assets/sprites/warrior_walk_sheet.png"
 	warrior.walk_frame_count = 8
 	warrior.walk_frame_w     = 128
@@ -56,7 +62,10 @@ func _register_all() -> void:
 	hunter.pickup_mult   = 1.3
 	hunter.regen_base    = 0.0
 	hunter.start_skill_ids = ["lightning"]
-	hunter.trait_desc    = "移动速度×1.35，拾取范围×1.3，HP×0.75"
+	hunter.trait_desc    = "移动速度转化为伤害加成（动即是攻）"
+	hunter.element_affinity = [SkillData.Element.LIGHTNING, SkillData.Element.POISON]
+	hunter.unique_mechanic = "velocity_damage"
+	hunter.mechanic_desc = "移速越快伤害越高，最高+40%"
 	hunter.walk_sheet_path  = "res://assets/sprites/hunter_walk_sheet.png"
 	hunter.walk_frame_count = 8
 	hunter.walk_frame_w     = 128
@@ -69,4 +78,12 @@ func get_character(id: String):
 	return null
 
 func is_unlocked(id: String, meta: Node) -> bool:
-	return true  # 所有角色默认开放
+	if id == "mage":
+		return true
+	if not meta:
+		return false
+	if id == "warrior":
+		return meta.total_runs >= 3
+	if id == "hunter":
+		return meta.best_score > 0 and meta.total_runs >= 5
+	return true
